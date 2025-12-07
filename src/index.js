@@ -1,101 +1,27 @@
-import express from 'express'
-import bodyParser from 'body-parser'
-import { prisma } from './db/client.js';
-const app = express()
+import express from 'express';
+import bodyParser from 'body-parser';
+import { envs } from './config/envs.js';
+import exampleRoutes from './routes/example/example.routes.js';
+import morgan from 'morgan';
 
-app.use(bodyParser.json())
-app.use(express.static('public'))
+const app = express();
 
-app.get(`/api`, async (req, res) => {
-  res.json({ up: true })
-})
+// Middlewares globales
+app.use(bodyParser.json());
+app.use(express.static('public'));
+app.use(morgan('dev'));
 
-app.post(`/api/user`, async (req, res) => {
-  const result = await prisma.user.create({
-    data: {
-      ...req.body,
-    },
-  })
-  res.json(result)
-})
+// Rutas
+app.get('/api', (req, res) => {
+  res.json({ up: true });
+});
 
-app.post(`/api/post`, async (req, res) => {
-  const { title, content, authorEmail } = req.body
-  const result = await prisma.post.create({
-    data: {
-      title,
-      content,
-      published: false,
-      author: { connect: { email: authorEmail } },
-    },
-  })
-  res.json(result)
-})
+// Montar rutas de ejemplo
+app.use('/api/example', exampleRoutes);
 
-app.put('/api/publish/:id', async (req, res) => {
-  const { id } = req.params
-  const post = await prisma.post.update({
-    where: {
-      id: parseInt(id),
-    },
-    data: { published: true },
-  })
-  res.json(post)
-})
+// Iniciar servidor
+const server = app.listen(envs.PORT, () =>
+  console.log(`🚀 Server ready at: http://localhost:${envs.PORT}`)
+);
 
-app.delete(`/api/post/:id`, async (req, res) => {
-  const { id } = req.params
-  const post = await prisma.post.delete({
-    where: {
-      id: parseInt(id),
-    },
-  })
-  res.json(post)
-})
-
-app.get(`/api/post/:id`, async (req, res) => {
-  const { id } = req.params
-  const post = await prisma.post.findUnique({
-    where: {
-      id: parseInt(id),
-    },
-  })
-  res.json(post)
-})
-
-app.get('/api/feed', async (req, res) => {
-  const posts = await prisma.post.findMany({
-    where: { published: true },
-    include: { author: true },
-  })
-  res.json(posts)
-})
-
-app.get('/api/filterPosts', async (req, res) => {
-  const { searchString } = req.query
-  const draftPosts = await prisma.post.findMany({
-    where: {
-      OR: [
-        {
-          title: {
-            contains: searchString,
-          },
-        },
-        {
-          content: {
-            contains: searchString,
-          },
-        },
-      ],
-    },
-  })
-  res.json(draftPosts)
-})
-
-const PORT = process.env.PORT || 3000
-const server = app.listen(PORT, () =>
-  console.log(
-    `🚀 Server ready at: http://localhost:${PORT}\n⭐️ See sample requests: https://github.com/prisma/prisma-examples/blob/latest/orm/express/README.md#using-the-rest-api`,
-  ),
-)
 
