@@ -24,4 +24,19 @@ const server = app.listen(envs.PORT, () =>
   console.log(`🚀 Server ready at: http://localhost:${envs.PORT}`)
 );
 
+// Graceful Shutdown: Cerrar conexiones al detener el servidor
+import { prisma } from './db/client.js';
+
+const gracefulShutdown = async () => {
+  console.log('\nCerrando servidor y desconectando base de datos...');
+  await prisma.$disconnect();
+  server.close(() => {
+    console.log('Servidor cerrado correctamente.');
+    process.exit(0);
+  });
+};
+
+process.on('SIGINT', gracefulShutdown);
+process.on('SIGTERM', gracefulShutdown);
+
 

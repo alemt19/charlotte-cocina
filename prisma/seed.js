@@ -1,6 +1,4 @@
-import { PrismaClient } from '../src/generated/prisma';
-
-const prisma = new PrismaClient();
+import { prisma } from '../src/db/client.js';
 
 async function main() {
 	const jane = await prisma.user.upsert({
