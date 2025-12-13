@@ -3,6 +3,7 @@ import bodyParser from 'body-parser';
 import { envs } from './config/envs.js';
 import exampleRoutes from './routes/example/example.routes.js';
 import morgan from 'morgan';
+import cors from 'cors';
 
 const app = express();
 
@@ -10,6 +11,9 @@ const app = express();
 app.use(bodyParser.json());
 app.use(express.static('public'));
 app.use(morgan('dev'));
+app.use(cors(
+  { origin: envs.ALLOWED_ORIGINS || '*' }
+));
 
 // Rutas
 app.get('/api', (req, res) => {
