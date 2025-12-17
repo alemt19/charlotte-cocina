@@ -2,6 +2,7 @@ import express from 'express';
 import bodyParser from 'body-parser';
 import { envs } from './config/envs.js';
 import exampleRoutes from './routes/example/example.routes.js';
+import inventoryRoutes from './routes/kitchen/inventory.routes.js';
 import morgan from 'morgan';
 import cors from 'cors';
 import kitchenStaffRoutes from './routes/kitchenStaff.routes.js';
@@ -33,6 +34,9 @@ app.get('/api', (req, res) => {
 
 //  Middleware de errores
 app.use(errorHandler);
+
+// Montar rutas de cocina / inventario
+app.use('/api/kitchen/inventory', inventoryRoutes);
 
 // Iniciar servidor
 const server = app.listen(envs.PORT, () =>
