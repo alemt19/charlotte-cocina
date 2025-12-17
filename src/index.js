@@ -4,8 +4,11 @@ import { envs } from './config/envs.js';
 import exampleRoutes from './routes/example/example.routes.js';
 import morgan from 'morgan';
 import cors from 'cors';
+import kitchenStaffRoutes from './routes/kitchenStaff.routes.js';
 
 const app = express();
+
+app.use('/api/kitchen', kitchenStaffRoutes);
 
 // Middlewares globales
 app.use(bodyParser.json());
