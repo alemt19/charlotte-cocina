@@ -7,8 +7,11 @@ import productRoutes from './routes/product.routes.js';
 import recipeRoutes from './routes/recipe.routes.js';
 import morgan from 'morgan';
 import cors from 'cors';
+import kitchenStaffRoutes from './routes/kitchenStaff.routes.js';
 
 const app = express();
+
+app.use('/api/kitchen', kitchenStaffRoutes);
 
 // Middlewares globales
 app.use(bodyParser.json());
