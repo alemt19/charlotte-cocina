@@ -2,6 +2,7 @@ import express from 'express';
 import bodyParser from 'body-parser';
 import { envs } from './config/envs.js';
 import exampleRoutes from './routes/example/example.routes.js';
+import categoryRoutes from './routes/category.routes.js';
 import morgan from 'morgan';
 import cors from 'cors';
 
@@ -21,6 +22,7 @@ app.get('/api', (req, res) => {
 });
 
 // Montar rutas de ejemplo
+app.use('/api/kitchen', categoryRoutes);
 app.use('/api/example', exampleRoutes);
 
 // Iniciar servidor
