@@ -18,7 +18,7 @@ export const createItem = async ({ name, type, unit, minStockAlert }) => {
   const data = {
     name,
     type,
-    unit,
+    unitMeasure: unit,
     currentStock: 0,
     minStockAlert: Math.round(minStockAlert || 0)
   };
