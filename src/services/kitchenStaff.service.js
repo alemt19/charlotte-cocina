@@ -15,9 +15,9 @@ const getKitchenStaffById = async (id) => {
 const createKitchenStaff = async (data) => {
     return prisma.kitchenStaff.create({
         data: {
-        user_id: data.user_id,
-        worker_code: data.worker_code,
-        role: data.role,
+            userId: data.userId,
+            workerCode: data.workerCode,
+            role: data.role,
     },
     });
 };
@@ -36,10 +36,4 @@ const deleteKitchenStaff = async (id) => {
     });
 };
 
-export {
-    getAllKitchenStaff,
-    getKitchenStaffById,
-    createKitchenStaff,
-    updateKitchenStaff,
-    deleteKitchenStaff,
-};
+export { getAllKitchenStaff, getKitchenStaffById, createKitchenStaff, updateKitchenStaff, deleteKitchenStaff };
