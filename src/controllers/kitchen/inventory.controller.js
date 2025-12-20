@@ -1,12 +1,12 @@
 import * as inventoryService from '../../services/kitchen/inventory.service.js';
 
-const ALLOWED_TYPES = ['INGREDIENT', 'PACKAGING'];
-const ALLOWED_UNITS = ['KG', 'G', 'L', 'ML', 'UNIT'];
+const ALLOWEDTYPES = ['INGREDIENT', 'PACKAGING'];
+const ALLOWEDUNITS = ['KG', 'G', 'L', 'ML', 'UNIT'];
 
 export const listItems = async (req, res) => {
-  const { type, stock_status } = req.query;
+  const { type, stock_status: stockStatus } = req.query;
   try {
-    const items = await inventoryService.findItems({ type, stock_status });
+    const items = await inventoryService.findItems({ type, stock_status: stockStatus });
     return res.json(items);
   } catch (err) {
     console.error('Error listItems:', err);
@@ -15,27 +15,27 @@ export const listItems = async (req, res) => {
 };
 
 export const createItem = async (req, res) => {
-  const { name, type, unit_measure, min_stock_alert } = req.body;
+  const { name, type, unit_measure: unitMeasure, min_stock_alert: minStockAlert } = req.body;
 
-  if (!name || !type || !unit_measure || min_stock_alert === undefined) {
+  if (!name || !type || !unitMeasure || minStockAlert === undefined) {
     return res.status(400).json({ error: 'Faltan campos requeridos' });
   }
 
-  if (!ALLOWED_TYPES.includes(type)) {
-    return res.status(400).json({ error: `type inválido. Valores permitidos: ${ALLOWED_TYPES.join(', ')}` });
+  if (!ALLOWEDTYPES.includes(type)) {
+    return res.status(400).json({ error: `type inválido. Valores permitidos: ${ALLOWEDTYPES.join(', ')}` });
   }
 
-  if (!ALLOWED_UNITS.includes(unit_measure)) {
-    return res.status(400).json({ error: `unit_measure inválido. Valores permitidos: ${ALLOWED_UNITS.join(', ')}` });
+  if (!ALLOWEDUNITS.includes(unitMeasure)) {
+    return res.status(400).json({ error: `unitMeasure inválido. Valores permitidos: ${ALLOWEDUNITS.join(', ')}` });
   }
 
-  const minStock = Math.round(Number(min_stock_alert) || 0);
+  const minStock = Math.round(Number(minStockAlert) || 0);
 
   try {
     const created = await inventoryService.createItem({
       name,
       type,
-      unit: unit_measure,
+      unit: unitMeasure,
       minStockAlert: minStock
     });
 
