@@ -1,11 +1,5 @@
 import { Router } from 'express';
-import {
-    getAll,
-    getById,
-    create,
-    update,
-    remove,
-} from '../controllers/kitchenStaff.controller.js';
+import { getAll, getById, create, update, remove } from '../controllers/kitchenStaff.controller.js';
 
 const router = Router();
 

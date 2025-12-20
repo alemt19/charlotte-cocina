@@ -8,38 +8,42 @@ import recipeRoutes from './routes/recipe.routes.js';
 import morgan from 'morgan';
 import cors from 'cors';
 import kitchenStaffRoutes from './routes/kitchenStaff.routes.js';
+import { errorHandler } from './middlewares/error.middleware.js';
+import { prisma } from './db/client.js';
 
 const app = express();
 
-app.use('/api/kitchen', kitchenStaffRoutes);
-
-// Middlewares globales
+//  Middlewares globales
 app.use(bodyParser.json());
 app.use(express.static('public'));
 app.use(morgan('dev'));
-app.use(cors(
-  { origin: envs.ALLOWED_ORIGINS || '*' }
-));
+app.use(cors({ origin: envs.ALLOWED_ORIGINS || '*' }));
 
-// Rutas
+//  Luego las rutas
+app.use('/api/kitchen', kitchenStaffRoutes);
+app.use('/api/example', exampleRoutes);
+
 app.get('/api', (req, res) => {
   res.json({ up: true });
 });
 
+<<<<<<< HEAD
 // Montar rutas de ejemplo
 app.use('/api/kitchen/categories', categoryRoutes);
 app.use('/api/kitchen/products', productRoutes);
 app.use('/api/kitchen/recipes', recipeRoutes);
 app.use('/api/example', exampleRoutes);
+=======
+//  Middleware de errores
+app.use(errorHandler);
+>>>>>>> e8cfd97 (Corrige validaciones)
 
 // Iniciar servidor
 const server = app.listen(envs.PORT, () =>
   console.log(`🚀 Server ready at: http://localhost:${envs.PORT}`)
 );
 
-// Graceful Shutdown: Cerrar conexiones al detener el servidor
-import { prisma } from './db/client.js';
-
+// Graceful Shutdown
 const gracefulShutdown = async () => {
   console.log('\nCerrando servidor y desconectando base de datos...');
   await prisma.$disconnect();
