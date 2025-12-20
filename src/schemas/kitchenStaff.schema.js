@@ -7,8 +7,9 @@ export const createKitchenStaffSchema = z.object({
 });
 
 export const updateKitchenStaffSchema = z.object({
-    worker_code: z.string().min(3).optional(),
-    role: z.enum(['chef', 'asistente', 'limpieza']).optional(),
+    userId: z.string().uuid().optional(),
+    workerCode: z.string().min(3).optional(),
+    role: z.enum(['CHEF', 'ASISTENTE', 'LIMPIEZA']).optional(),
     isActive: z.boolean().optional(),
 });
 

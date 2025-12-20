@@ -1,7 +1,7 @@
 generator client {
   provider        = "prisma-client-js"
-  previewFeatures = ["driverAdapters"]
   output          = "../src/generated/prisma"
+  previewFeatures = ["driverAdapters"]
 }
 
 datasource db {
@@ -26,129 +26,50 @@ model Post {
   author    User?   @relation(fields: [authorId], references: [id])
 }
 
-// ==========================================
-// ENUMS (Tipos de Datos)
-// ==========================================
-
-enum RecipeScope {
-  DINE_IN
-  DELIVERY
-  TAKEOUT
-  PICKUP
-  ALL
-}
-
-enum ItemType {
-  INGREDIENT // Insumo (Carne, Tomate)
-  PACKAGING // Empaque (Caja, Bolsa)
-}
-
-enum MovementType {
-  PURCHASE // Compra (Entrada)
-  SALE // Venta (Salida)
-  WASTE // Merma (Salida)
-  ADJUSTMENT // Ajuste de Inventario (Entrada/Salida)
-  RETURN_RESTOCK // Devolución por pedido rechazado (Entrada)
-}
-
-enum AssetStatus {
-  OPERATIONAL
-  UNDER_MAINTENANCE
-  DAMAGED
-  LOST
-}
-
-enum SourceModule {
-  AC_MODULE // Atención al Cliente
-  DP_MODULE // Delivery & Pickup
-}
-
-enum ServiceType {
-  DINE_IN // Comer en Mesa
-  TAKEOUT // Para llevar (Pide en local)
-  DELIVERY // A domicilio
-  PICKUP // Recoger (Pide web)
-}
-
-enum KdsStatus {
-  PENDING
-  COOKING
-  READY
-  SERVED
-  REJECTED // Importante para el flujo de Rollback
-}
-
-enum StaffRole {
-  CHEF
-  WAITER
-  RUNNER
-  HEAD_CHEF
-}
-
-// ==========================================
-// 1. DANIEL
-// ==========================================
-
 model KitchenCategory {
-  id       String  @id @default(uuid())
-  name     String  @db.VarChar(50)
-  isActive Boolean @default(true) @map("is_active")
-
-  // Relaciones
+  name     String           @db.VarChar(50)
+  isActive Boolean          @default(true) @map("is_active")
+  id       String           @id @default(uuid()) @db.Uuid
   products KitchenProduct[]
 
   @@map("kitchen_categories")
 }
 
 model KitchenProduct {
-  id          String   @id @default(uuid())
-  categoryId  String?  @map("category_id") @db.Uuid
-  name        String   @db.VarChar(100)
-  description String?  @db.Text
-  basePrice   Decimal  @map("base_price") @db.Decimal(10, 2)
-  imageUrl    String?  @map("image_url")
-  isActive    Boolean  @default(true) @map("is_active")
-  createdAt   DateTime @default(now()) @map("created_at")
-
-  // Relaciones
-  category KitchenCategory?     @relation(fields: [categoryId], references: [id])
-  recipes  Recipe[]
-  kdsItems KdsProductionQueue[]
+  categoryId  String?          @map("category_id") @db.Uuid
+  name        String           @db.VarChar(100)
+  description String?
+  basePrice   Decimal          @map("base_price") @db.Decimal(10, 2)
+  imageUrl    String?          @map("image_url")
+  isActive    Boolean          @default(true) @map("is_active")
+  createdAt   DateTime         @default(now()) @map("created_at")
+  id          String           @id @default(uuid()) @db.Uuid
+  category    KitchenCategory? @relation(fields: [categoryId], references: [id])
+  recipes     Recipe[]
 
   @@map("kitchen_products")
 }
 
 model Recipe {
-  id               String      @id @default(uuid())
-  productId        String      @map("product_id") @db.Uuid
-  inventoryItemId  String      @map("inventory_item_id") @db.Uuid
-  quantityRequired Decimal     @map("quantity_required") @db.Decimal(10, 3)
-  applyOn          RecipeScope @default(ALL) @map("apply_on")
-
-  // Relaciones
-  product       KitchenProduct @relation(fields: [productId], references: [id], onDelete: Cascade)
-  inventoryItem InventoryItem  @relation(fields: [inventoryItemId], references: [id], onDelete: Restrict)
+  id               String         @id @default(uuid())
+  productId        String         @map("product_id") @db.Uuid
+  inventoryItemId  String         @map("inventory_item_id") @db.Uuid
+  quantityRequired Decimal        @map("quantity_required") @db.Decimal(10, 3)
+  applyOn          RecipeScope    @default(ALL) @map("apply_on")
+  product          KitchenProduct @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@map("recipes")
 }
-
-// ==========================================
-// 2. LEANDER
-// ==========================================
 
 model InventoryItem {
   id            String   @id @default(uuid())
   name          String   @db.VarChar(100)
   type          ItemType
   currentStock  Decimal  @default(0) @map("current_stock") @db.Decimal(10, 3)
-  unitMeasure   String   @map("unit_measure") // KG, UNIDAD, ETC
+  unitMeasure   String   @map("unit_measure")
   averageCost   Decimal  @default(0) @map("average_cost") @db.Decimal(10, 2)
   minStockAlert Decimal  @default(5) @map("min_stock_alert") @db.Decimal(10, 3)
   lastUpdated   DateTime @default(now()) @updatedAt @map("last_updated")
-
-  // Relaciones
-  recipes Recipe[]
-  logs    InventoryLog[]
 
   @@map("inventory_items")
 }
@@ -158,11 +79,8 @@ model InventoryLog {
   itemId         String       @map("item_id") @db.Uuid
   movementType   MovementType @map("movement_type")
   quantityChange Decimal      @map("quantity_change") @db.Decimal(10, 3)
-  reason         String?      @db.Text
+  reason         String?
   createdAt      DateTime     @default(now()) @map("created_at")
-
-  // Relaciones
-  item InventoryItem @relation(fields: [itemId], references: [id])
 
   @@map("inventory_logs")
 }
@@ -173,10 +91,7 @@ model KitchenAsset {
   totalQuantity Int         @default(0) @map("total_quantity")
   status        AssetStatus @default(OPERATIONAL)
   lastAuditDate DateTime?   @map("last_audit_date") @db.Date
-  notes         String?     @db.Text
-
-  // Relaciones
-  logs AssetLog[]
+  notes         String?
 
   @@map("kitchen_assets")
 }
@@ -185,33 +100,19 @@ model AssetLog {
   id             String   @id @default(uuid())
   assetId        String   @map("asset_id") @db.Uuid
   quantityChange Int      @map("quantity_change")
-  reason         String?  @db.Text
-  reportedBy     String   @map("reported_by") @db.Uuid // Referencia a KitchenStaff
+  reason         String?
+  reportedBy     String   @map("reported_by") @db.Uuid
   createdAt      DateTime @default(now()) @map("created_at")
-
-  // Relaciones
-  asset    KitchenAsset @relation(fields: [assetId], references: [id])
-  reporter KitchenStaff @relation(fields: [reportedBy], references: [id])
 
   @@map("asset_logs")
 }
 
-// ==========================================
-// 3. ANDRÉS
-// ==========================================
-
 model KitchenStaff {
   id         String    @id @default(uuid())
-  userId     String    @unique @map("user_id") @db.Uuid // FK externa a módulo de seguridad
+  userId     String    @unique @map("user_id") @db.Uuid
   workerCode String    @unique @map("worker_code") @db.VarChar(10)
   role       StaffRole
   isActive   Boolean   @default(true) @map("is_active")
-
-  // Relaciones
-  shifts          StaffShift[]
-  assignedCooking KdsProductionQueue[] @relation("ChefRelation")
-  assignedServing KdsProductionQueue[] @relation("WaiterRelation")
-  assetReports    AssetLog[]
 
   @@map("kitchen_staff")
 }
@@ -223,47 +124,82 @@ model StaffShift {
   shiftEnd   DateTime? @map("shift_end")
   isPresent  Boolean   @default(true) @map("is_present")
 
-  // Relaciones
-  staff KitchenStaff @relation(fields: [staffId], references: [id])
-
   @@map("staff_shifts")
 }
 
 model KdsProductionQueue {
-  id String @id @default(uuid())
+  id               String       @id @default(uuid())
+  externalOrderId  String       @map("external_order_id") @db.VarChar(50)
+  sourceModule     SourceModule @map("source_module")
+  displayLabel     String       @map("display_label") @db.VarChar(50)
+  customerName     String       @map("customer_name") @db.VarChar(100)
+  serviceMode      ServiceType  @map("service_mode")
+  productId        String       @map("product_id") @db.Uuid
+  quantity         Int          @default(1)
+  preparationNotes String?      @map("preparation_notes")
+  status           KdsStatus    @default(PENDING)
+  priorityLevel    Int          @default(1) @map("priority_level")
+  assignedChefId   String?      @map("assigned_chef_id") @db.Uuid
+  assignedWaiterId String?      @map("assigned_waiter_id") @db.Uuid
+  createdAt        DateTime     @default(now()) @map("created_at")
+  startedAt        DateTime?    @map("started_at")
+  finishedAt       DateTime?    @map("finished_at")
 
-  // 1. Origen e Inyección
-  externalOrderId String       @map("external_order_id") @db.VarChar(50) // Soporta INT o UUID
-  sourceModule    SourceModule @map("source_module")
-
-  // 2. Datos Visuales
-  displayLabel String @map("display_label") @db.VarChar(50)
-  customerName String @map("customer_name") @db.VarChar(100)
-
-  // 3. Lógica de Negocio (Vital para Recetas)
-  serviceMode ServiceType @map("service_mode")
-
-  // 4. Detalle de la Tarea
-  productId        String  @map("product_id") @db.Uuid
-  quantity         Int     @default(1)
-  preparationNotes String? @map("preparation_notes") @db.Text
-
-  // 5. Estado y Tiempos
-  status        KdsStatus @default(PENDING)
-  priorityLevel Int       @default(1) @map("priority_level")
-
-  assignedChefId   String? @map("assigned_chef_id") @db.Uuid
-  assignedWaiterId String? @map("assigned_waiter_id") @db.Uuid
-
-  createdAt  DateTime  @default(now()) @map("created_at")
-  startedAt  DateTime? @map("started_at")
-  finishedAt DateTime? @map("finished_at")
-
-  // Relaciones
-  product KitchenProduct @relation(fields: [productId], references: [id])
-  chef    KitchenStaff?  @relation("ChefRelation", fields: [assignedChefId], references: [id])
-  waiter  KitchenStaff?  @relation("WaiterRelation", fields: [assignedWaiterId], references: [id])
-
-  @@index([status]) // Índice para optimizar consultas del KDS
+  @@index([status])
   @@map("kds_production_queue")
+}
+
+enum RecipeScope {
+  DINE_IN
+  DELIVERY
+  TAKEOUT
+  PICKUP
+  ALL
+}
+
+enum ItemType {
+  INGREDIENT
+  PACKAGING
+}
+
+enum MovementType {
+  PURCHASE
+  SALE
+  WASTE
+  ADJUSTMENT
+  RETURN_RESTOCK
+}
+
+enum AssetStatus {
+  OPERATIONAL
+  UNDER_MAINTENANCE
+  DAMAGED
+  LOST
+}
+
+enum SourceModule {
+  AC_MODULE
+  DP_MODULE
+}
+
+enum ServiceType {
+  DINE_IN
+  TAKEOUT
+  DELIVERY
+  PICKUP
+}
+
+enum KdsStatus {
+  PENDING
+  COOKING
+  READY
+  SERVED
+  REJECTED
+}
+
+enum StaffRole {
+  CHEF
+  WAITER
+  RUNNER
+  HEAD_CHEF
 }
