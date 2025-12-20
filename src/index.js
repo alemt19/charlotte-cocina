@@ -22,7 +22,7 @@ app.get('/api', (req, res) => {
 });
 
 // Montar rutas de ejemplo
-app.use('/api/kitchen', categoryRoutes);
+app.use('/api/kitchen/categories', categoryRoutes);
 app.use('/api/example', exampleRoutes);
 
 // Iniciar servidor

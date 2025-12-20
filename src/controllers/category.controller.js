@@ -1,30 +1,66 @@
-import { PrismaClient } from '../generated/prisma/index.js';
-const prisma = new PrismaClient();
+// src/controllers/category.controller.js
+import categoryService from '../services/category.service.js';
+import { createCategorySchema, getCategoriesQuerySchema } from '../schemas/category.schema.js';
 
-export const getCategories = async (req, res) => {
+const getCategories = async (req, res) => {
   try {
-    const { active_only } = req.query;
-    const categories = await prisma.kitchenCategory.findMany({
-      where: active_only === 'true' ? { isActive: true } : {},
-      orderBy: { name: 'asc' }
-    });
-    res.json(categories);
-  } catch (error) {
-    res.status(500).json({ error: "Error al obtener categorías" });
-  }
-};
-
-export const createCategory = async (req, res) => {
-  try {
-    const { name } = req.body;
-    if (!name || name.trim() === "") {
-      return res.status(400).json({ error: "El nombre es obligatorio" });
+    // Validación: Zod revisará si viene 'activeOnly'
+    const validation = getCategoriesQuerySchema.safeParse(req.query);
+    
+    if (!validation.success) {
+      return res.status(400).json({
+        success: false,
+        error: "VALIDATION_ERROR",
+        message: validation.error.errors[0].message
+      });
     }
-    const newCategory = await prisma.kitchenCategory.create({
-      data: { name: name.trim() }
+
+    // Llamamos al servicio (que ahora tiene su propio try/catch interno)
+    const categories = await categoryService.findCategories(req.query);
+
+    return res.status(200).json({
+      success: true,
+      message: "Lista de categorías obtenida",
+      data: categories
     });
-    res.status(201).json(newCategory);
+
   } catch (error) {
-    res.status(500).json({ error: "Error al crear categoría" });
+    // Si el servicio falla y lanza error, caemos aquí
+    return res.status(500).json({
+      success: false,
+      error: "SERVER_ERROR",
+      message: "Error interno al obtener categorías"
+    });
   }
 };
+
+const createCategory = async (req, res) => {
+  try {
+    const validation = createCategorySchema.safeParse(req.body);
+
+    if (!validation.success) {
+      return res.status(400).json({
+        success: false,
+        error: "VALIDATION_ERROR",
+        message: validation.error.errors[0].message
+      });
+    }
+
+    const newCategory = await categoryService.createCategory(validation.data);
+
+    return res.status(201).json({
+      success: true,
+      message: "Categoría creada exitosamente",
+      data: newCategory
+    });
+
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      error: "SERVER_ERROR",
+      message: "Error al crear la categoría"
+    });
+  }
+};
+
+export { getCategories, createCategory };
