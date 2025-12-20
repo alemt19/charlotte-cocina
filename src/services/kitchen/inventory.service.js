@@ -1,7 +1,7 @@
 import { prisma } from '../../db/client.js';
 
-export const findItems = async ({ type, stock_status }) => {
-  if (stock_status === 'LOW') {
+export const findItems = async ({ type, stock_status: stockStatus }) => {
+  if (stockStatus === 'LOW') {
     if (type) {
       return await prisma.$queryRaw`SELECT * FROM "InventoryItem" WHERE "type" = ${type} AND "currentStock" < "minStockAlert"`;
     }
