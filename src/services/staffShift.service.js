@@ -3,11 +3,23 @@ import { prisma } from '../db/client.js';
 const registerShift = async (staffId, type) => {
     try {
         if (type === 'CHECK_IN') {
-            return await prisma.staffShift.create({
-                data: {
-                    staffId,
-                    shiftStart: new Date(),
-                    isPresent: true,
+            const existingShift = await prisma.staffShift.findFirst({
+            where: {
+                staffId,
+                shiftEnd: null,
+        },
+        orderBy: { shiftStart: 'desc' },
+        });
+
+        if (existingShift) {
+            throw new Error('Ya existe un turno abierto para este staff. No se puede hacer CHECK_IN nuevamente.');
+        }
+
+        return await prisma.staffShift.create({
+            data: {
+            staffId,
+            shiftStart: new Date(),
+            isPresent: true,
         },
         });
     }
