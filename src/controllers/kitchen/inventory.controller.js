@@ -1,12 +1,15 @@
 import * as inventoryService from '../../services/kitchen/inventory.service.js';
-
-const ALLOWEDTYPES = ['INGREDIENT', 'PACKAGING'];
-const ALLOWEDUNITS = ['KG', 'G', 'L', 'ML', 'UNIT'];
+import { createItemSchema, listItemsSchema } from '../../schemas/kitchen/inventory.schema.js';
 
 export const listItems = async (req, res) => {
-  const { type, stock_status: stockStatus } = req.query;
+  const parsed = listItemsSchema.safeParse(req.query);
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'Query inválida', details: parsed.error.format() });
+  }
+
+  const { type, stock_status } = parsed.data;
   try {
-    const items = await inventoryService.findItems({ type, stock_status: stockStatus });
+    const items = await inventoryService.findItems({ type, stock_status });
     return res.json(items);
   } catch (err) {
     console.error('Error listItems:', err);
@@ -15,33 +18,28 @@ export const listItems = async (req, res) => {
 };
 
 export const createItem = async (req, res) => {
-  const { name, type, unit_measure: unitMeasure, min_stock_alert: minStockAlert } = req.body;
-
-  if (!name || !type || !unitMeasure || minStockAlert === undefined) {
-    return res.status(400).json({ error: 'Faltan campos requeridos' });
+  const parsed = createItemSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'Body inválido', details: parsed.error.format() });
   }
 
-  if (!ALLOWEDTYPES.includes(type)) {
-    return res.status(400).json({ error: `type inválido. Valores permitidos: ${ALLOWEDTYPES.join(', ')}` });
-  }
-
-  if (!ALLOWEDUNITS.includes(unitMeasure)) {
-    return res.status(400).json({ error: `unitMeasure inválido. Valores permitidos: ${ALLOWEDUNITS.join(', ')}` });
-  }
-
-  const minStock = Math.round(Number(minStockAlert) || 0);
+  const { name, type, unit_measure, min_stock_alert } = parsed.data;
+  const minStock = Math.round(Number(min_stock_alert) || 0);
 
   try {
     const created = await inventoryService.createItem({
       name,
       type,
-      unit: unitMeasure,
+      unit: unit_measure,
       minStockAlert: minStock
     });
 
     return res.status(201).json(created);
   } catch (err) {
     console.error('Error createItem:', err);
-    return res.status(500).json({ error: 'Error interno al crear ítem', details: err?.message });
+    if (err && err.code === 'P2025_DUPLICATE') {
+      return res.status(409).json({ error: 'Ítem con el mismo nombre ya existe' });
+    }
+    return res.status(500).json({ error: 'Error interno al crear ítem' });
   }
 };
