@@ -15,10 +15,18 @@ export const findItems = async ({ type, stock_status: stockStatus }) => {
 };
 
 export const createItem = async ({ name, type, unit, minStockAlert }) => {
+  // Verificar unicidad por nombre
+  const existing = await prisma.inventoryItem.findFirst({ where: { name } });
+  if (existing) {
+    const err = new Error('Duplicate name');
+    err.code = 'P2025_DUPLICATE';
+    throw err;
+  }
+
   const data = {
     name,
     type,
-    unitMeasure: unit,
+    unit,
     currentStock: 0,
     minStockAlert: Math.round(minStockAlert || 0)
   };
