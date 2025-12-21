@@ -4,6 +4,7 @@ import {
     createKitchenStaff,
     updateKitchenStaff,
     deleteKitchenStaff,
+    getActiveKitchenStaff,
 } from '../services/kitchenStaff.service.js';
 
 import { createKitchenStaffSchema, updateKitchenStaffSchema, idSchema } from '../schemas/kitchenStaff.schema.js';
@@ -80,4 +81,14 @@ const create = async (req, res, next) => {
     }
 };
 
-export { getAll, getById, create, update, remove };
+const getActiveKitchenStaffController = async (req, res) => {
+    try {
+        const staff = await getActiveKitchenStaff();
+        res.status(200).json(staff);
+    } catch (error) {
+        console.error('Error en getActiveKitchenStaffController:', error);
+        res.status(400).json({ message: error.message });
+    }
+};
+
+export { getAll, getById, create, update, remove, getActiveKitchenStaffController };

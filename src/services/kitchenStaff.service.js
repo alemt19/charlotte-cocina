@@ -61,10 +61,31 @@ const deleteKitchenStaff = async (id) => {
     }
 };
 
+const getActiveKitchenStaff = async () => {
+    try {
+        const staff = await prisma.kitchenStaff.findMany({
+        where: { isActive: true },
+        include: {
+            shifts: {
+                where: {
+                    shiftEnd: null,
+            },
+        },
+        },
+    });
+
+        return staff;
+    } catch (error) {
+        console.error('Error en getActiveKitchenStaff:', error);
+        throw error;
+    }
+};
+
 export {
     getAllKitchenStaff,
     getKitchenStaffById,
     createKitchenStaff,
     updateKitchenStaff,
     deleteKitchenStaff,
+    getActiveKitchenStaff,
 };
