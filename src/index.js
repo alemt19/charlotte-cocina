@@ -7,6 +7,7 @@ import cors from 'cors';
 import kitchenStaffRoutes from './routes/kitchenStaff.routes.js';
 import { errorHandler } from './middlewares/error.middleware.js';
 import { prisma } from './db/client.js';
+import staffShiftRoutes from './routes/staffShift.routes.js';
 
 const app = express();
 
@@ -19,6 +20,7 @@ app.use(cors({ origin: envs.ALLOWED_ORIGINS || '*' }));
 //  Luego las rutas
 app.use('/api/kitchen', kitchenStaffRoutes);
 app.use('/api/example', exampleRoutes);
+app.use(staffShiftRoutes);
 
 app.get('/api', (req, res) => {
   res.json({ up: true });
