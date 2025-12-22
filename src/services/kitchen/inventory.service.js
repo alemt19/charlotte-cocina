@@ -61,3 +61,87 @@ export const updateItem = async (id, updates) => {
 
   return await prisma.inventoryItem.update({ where: { id }, data });
 };
+
+export const registerInbound = async ({ itemId, quantityChange, costAtTime, movementType, reason }) => {
+  // Ensure item exists
+  const item = await prisma.inventoryItem.findUnique({ where: { id: itemId } });
+  if (!item) {
+    const err = new Error('Item not found');
+    err.code = 'P2025_NOT_FOUND';
+    throw err;
+  }
+
+  // Convert to numbers for calculation
+  const currentStock = Number(item.currentStock ?? 0);
+  const averageCost = Number(item.averageCost ?? 0);
+
+  const newStockTotal = currentStock + Number(quantityChange);
+  const costTotalCurrent = currentStock * averageCost;
+  const costTotalNew = costTotalCurrent + Number(quantityChange) * Number(costAtTime);
+  const newAverageCost = newStockTotal > 0 ? costTotalNew / newStockTotal : 0;
+
+  const result = await prisma.$transaction(async (tx) => {
+    const log = await tx.inventoryLog.create({
+      data: {
+        itemId,
+        movementType,
+        quantityChange: Number(quantityChange),
+        costAtTime: Number(costAtTime),
+        reason
+      }
+    });
+
+    const updated = await tx.inventoryItem.update({
+      where: { id: itemId },
+      data: {
+        currentStock: newStockTotal,
+        averageCost: newAverageCost
+      }
+    });
+
+    return { log, updated };
+  });
+
+  return { message: 'Inbound registered', averageCost: result.updated.averageCost, currentStock: result.updated.currentStock };
+};
+
+export const registerOutbound = async ({ itemId, quantityChange, movementType, reason }) => {
+  const item = await prisma.inventoryItem.findUnique({ where: { id: itemId } });
+  if (!item) {
+    const err = new Error('Item not found');
+    err.code = 'P2025_NOT_FOUND';
+    throw err;
+  }
+
+  const currentStock = Number(item.currentStock ?? 0);
+  const averageCost = Number(item.averageCost ?? 0);
+
+  if (currentStock < Number(quantityChange)) {
+    const err = new Error('Insufficient stock');
+    err.code = 'INSUFFICIENT_STOCK';
+    throw err;
+  }
+
+  const result = await prisma.$transaction(async (tx) => {
+    const log = await tx.inventoryLog.create({
+      data: {
+        itemId,
+        movementType,
+        quantityChange: Number(quantityChange),
+        costAtTime: averageCost,
+        reason
+      }
+    });
+
+    const updated = await tx.inventoryItem.update({
+      where: { id: itemId },
+      data: {
+        currentStock: currentStock - Number(quantityChange)
+      }
+    });
+
+    return { log, updated };
+  });
+
+  return { message: 'Outbound registered', currentStock: result.updated.currentStock };
+};

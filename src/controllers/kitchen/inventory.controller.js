@@ -1,5 +1,5 @@
 import * as inventoryService from '../../services/kitchen/inventory.service.js';
-import { createItemSchema, listItemsSchema, updateItemSchema } from '../../schemas/kitchen/inventory.schema.js';
+import { createItemSchema, listItemsSchema, updateItemSchema, inboundSchema, outboundSchema } from '../../schemas/kitchen/inventory.schema.js';
 
 export const listItems = async (req, res) => {
   const parsed = listItemsSchema.safeParse(req.query);
@@ -70,5 +70,34 @@ export const updateItem = async (req, res) => {
   } catch (err) {
     console.error('Error updateItem:', err);
     return res.status(500).json({ error: 'Error interno al actualizar ítem' });
+  }
+};
+
+export const registerInbound = async (req, res) => {
+  const parsed = inboundSchema.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: 'Body inválido', details: parsed.error.format() });
+
+  const { itemId, quantityChange, costAtTime, movementType, reason } = parsed.data;
+  try {
+    const result = await inventoryService.registerInbound({ itemId, quantityChange, costAtTime, movementType, reason });
+    return res.status(201).json(result);
+  } catch (err) {
+    console.error('Error registerInbound:', err);
+    return res.status(500).json({ error: 'Error interno al registrar entrada' });
+  }
+};
+
+export const registerOutbound = async (req, res) => {
+  const parsed = outboundSchema.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: 'Body inválido', details: parsed.error.format() });
+
+  const { itemId, quantityChange, movementType, reason } = parsed.data;
+  try {
+    const result = await inventoryService.registerOutbound({ itemId, quantityChange, movementType, reason });
+    return res.status(201).json(result);
+  } catch (err) {
+    console.error('Error registerOutbound:', err);
+    if (err && err.code === 'INSUFFICIENT_STOCK') return res.status(400).json({ error: 'Stock insuficiente' });
+    return res.status(500).json({ error: 'Error interno al registrar salida' });
   }
 };

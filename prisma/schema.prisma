@@ -158,6 +158,7 @@ model InventoryLog {
   itemId         String       @map("item_id") @db.Uuid
   movementType   MovementType @map("movement_type")
   quantityChange Decimal      @map("quantity_change") @db.Decimal(10, 3)
+  costAtTime     Decimal?     @map("cost_at_time") @db.Decimal(10, 2)
   reason         String?      @db.Text
   createdAt      DateTime     @default(now()) @map("created_at")
 
