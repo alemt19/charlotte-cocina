@@ -18,6 +18,21 @@ export const updateItemSchema = z.object({
   unitMeasure: z.enum(['KG', 'G', 'L', 'ML', 'UNIT']).optional()
 });
 
+export const inboundSchema = z.object({
+  itemId: z.string().uuid(),
+  quantityChange: z.number().positive(),
+  costAtTime: z.number().nonnegative(),
+  movementType: z.enum(['PURCHASE', 'RETURN_RESTOCK']),
+  reason: z.string().min(1)
+});
+
+export const outboundSchema = z.object({
+  itemId: z.string().uuid(),
+  quantityChange: z.number().positive(),
+  movementType: z.enum(['WASTE', 'ADJUSTMENT']),
+  reason: z.string().min(1)
+});
+
 export default {
   createItemSchema,
   listItemsSchema
