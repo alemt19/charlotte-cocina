@@ -69,4 +69,90 @@ const injectOrder = async (orderData) => {
     });
 };
 
-export { injectOrder };
+const getQueueTasks = async (status) => {
+    try {
+        return await prisma.kdsProductionQueue.findMany({
+        where: status ? { status } : {},
+        include: {
+            product: {
+            select: { name: true },
+        },
+        },
+        orderBy: [
+            { priorityLevel: 'asc' },
+            { createdAt: 'asc' },
+        ],
+    });
+    } catch (error) {
+        console.error('Error en getQueueTasks:', error);
+        throw error;
+    }
+};
+
+const assignTask = async (taskId, staffId, role) => {
+    try {
+        const staff = await prisma.kitchenStaff.findUnique({ where: { id: staffId } });
+        if (!staff) throw new Error('El staff_id no existe.');
+
+        let updateData = {};
+        if (role === 'CHEF') updateData.assignedChefId = staffId;
+        if (role === 'WAITER') updateData.assignedWaiterId = staffId;
+
+        return await prisma.kdsProductionQueue.update({
+        where: { id: taskId },
+        data: updateData,
+    });
+    } catch (error) {
+    console.error('Error en assignTask:', error);
+    throw error;
+    }
+};
+
+const updateTaskStatus = async (taskId, newStatus) => {
+    try {
+        const task = await prisma.kdsProductionQueue.findUnique({ where: { id: taskId } });
+        if (!task) throw new Error('La tarea no existe.');
+
+        const validTransitions = {
+            PENDING: ['COOKING'],
+            COOKING: ['READY'],
+            READY: [],
+    };
+        if (!validTransitions[task.status].includes(newStatus)) {
+        throw new Error(`Transición inválida de ${task.status} a ${newStatus}.`);
+    }
+
+        const updateData = { status: newStatus };
+        if (newStatus === 'COOKING') updateData.startedAt = new Date();
+        if (newStatus === 'READY') updateData.finishedAt = new Date();
+
+        const updatedTask = await prisma.kdsProductionQueue.update({
+        where: { id: taskId },
+        data: updateData,
+    });
+
+        if (newStatus === 'READY') {
+        const allTasks = await prisma.kdsProductionQueue.findMany({
+        where: { externalOrderId: updatedTask.externalOrderId },
+        });
+        const allReady = allTasks.every(t => t.status === 'READY');
+        if (allReady) {
+            try {
+                await axios.post(`http://localhost:3000/api/notify/${updatedTask.sourceModule}`, {
+                    orderId: updatedTask.externalOrderId,
+                    status: 'READY',
+            });
+            } catch (error) {
+            console.error('Error enviando notificación externa:', error);
+            }
+        }
+    }
+
+        return updatedTask;
+    } catch (error) {
+        console.error('Error en updateTaskStatus:', error);
+        throw error;
+    }
+};
+
+export { injectOrder, getQueueTasks, assignTask, updateTaskStatus };
