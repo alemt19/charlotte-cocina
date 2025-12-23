@@ -13,4 +13,17 @@ const getCategoriesQuerySchema = z.object({
   activeOnly: z.enum(['true', 'false']).optional()
 });
 
-export { createCategorySchema, getCategoriesQuerySchema };
+
+// Validamos los datos que llegan para editar (PATCH)
+const updateCategorySchema = z.object({
+  name: z.string({
+    invalid_type_error: "El nombre debe ser un texto"
+  }).min(3, "El nombre debe tener al menos 3 caracteres").optional(),
+  
+  is_active: z.boolean({
+    invalid_type_error: "is_active debe ser true o false"
+  }).optional()
+}).strict(); // .strict() rechaza campos raros que no esperemos
+
+// Exportamos también este nuevo schema
+export { createCategorySchema, getCategoriesQuerySchema, updateCategorySchema };

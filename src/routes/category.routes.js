@@ -1,11 +1,21 @@
-// src/routes/category.routes.js
 import { Router } from 'express';
-import { getCategories, createCategory } from '../controllers/category.controller.js';
+// IMPORTANTE: Aquí importamos el controlador y le asignamos el nombre "categoryController"
+import categoryController from '../controllers/category.controller.js';
 
 const router = Router();
 
-// Ya no inyectamos middlewares aquí, la lógica pasó al controlador
-router.get('/', getCategories);
-router.post('/', createCategory);
+// 1. Obtener categorías (GET)
+// Nota: Verifica si en tu controlador la función se llama "getCategories" o "findCategories"
+// Si te da error aquí, cambia .findCategories por .getCategories
+router.get('/', categoryController.findCategories || categoryController.getCategories);
+
+// 2. Crear categoría (POST)
+router.post('/', categoryController.createCategory);
+
+// 3. Actualizar categoría (PATCH)
+router.patch('/:id', categoryController.updateCategory);
+
+// 4. Eliminar categoría (DELETE)
+router.delete('/:id', categoryController.deleteCategory);
 
 export default router;
