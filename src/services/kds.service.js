@@ -32,7 +32,7 @@ const injectOrder = async (orderData) => {
                 customerName,
                 productId: item.productId,
                 quantity: item.quantity,
-                notes: item.notes,
+                preparationNotes: item.notes,
         },
         });
         createdTasks.push(task);
@@ -40,24 +40,33 @@ const injectOrder = async (orderData) => {
         const recipe = await tx.recipe.findMany({
             where: {
                 productId: item.productId,
-                applyOn: "DINE_IN",
-        },
-        include: { ingredients: true },
+            },
+            include: { inventoryItem: true },
         });
 
+        let deductedCount = 0;
+
         for (const r of recipe) {
-            for (const ingredient of r.ingredients) {
-                try {
-                 //   await axios.post('http://localhost:3000/api/kitchen/inventory/outbound', {
-                 // itemId: ingredient.itemId,
-                 //quantity: ingredient.quantity * item.quantity,
-                 //reason: 'ORDER_INJECTION',
-                 //sourceModule,
-            //});
+            if (r.applyOn !== "ALL" && r.applyOn !== serviceMode) {
+                continue;
+            }
+
+            try {
+                // await axios.post('http://localhost:3000/api/kitchen/inventory/outbound', {
+                //     itemId: r.inventoryItemId,
+                //     quantity: r.quantityRequired * item.quantity,
+                //     reason: 'ORDER_INJECTION',
+                //     sourceModule,
+                // });
+                console.log(`Descontando ${r.quantityRequired * item.quantity} del item ${r.inventoryItem.name}`);
+                deductedCount++;
             } catch (error) {
-                throw new Error(`Fallo al descontar inventario del item ${ingredient.itemId}`);
+                throw new Error(`Fallo al descontar inventario del item ${r.inventoryItemId}`);
             }
         }
+
+        if (recipe.length > 0 && deductedCount === 0) {
+            throw new Error(`ERROR: El producto ${item.productId} tiene recetas configuradas, pero ninguna aplica para el modo ${serviceMode}.`);
         }
     }
 
