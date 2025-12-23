@@ -71,18 +71,39 @@ const injectOrder = async (orderData) => {
 
 const getQueueTasks = async (status) => {
     try {
-        return await prisma.kdsProductionQueue.findMany({
-        where: status ? { status } : {},
-        include: {
-            product: {
-            select: { name: true },
-        },
-        },
-        orderBy: [
-            { priorityLevel: 'asc' },
-            { createdAt: 'asc' },
+        const tasks = await prisma.kdsProductionQueue.findMany({
+            where: status ? { status } : {},
+            orderBy: [
+                { priorityLevel: 'asc' },
+                { createdAt: 'asc' },
         ],
+        select: {
+            id: true,
+            externalOrderId: true,
+            productId: true,
+            quantity: true,
+            preparationNotes: true,
+            status: true,
+            priorityLevel: true,
+            createdAt: true,
+        },
     });
+
+        const productIds = [...new Set(tasks.map(t => t.productId))];
+
+        const products = await prisma.kitchenProduct.findMany({
+        where: { id: { in: productIds } },
+        select: { id: true, name: true },
+    });
+
+        const productMap = Object.fromEntries(products.map(p => [p.id, p]));
+
+        const tasksWithProduct = tasks.map(task => ({
+        ...task,
+        product: productMap[task.productId] || null,
+    }));
+
+    return tasksWithProduct;
     } catch (error) {
         console.error('Error en getQueueTasks:', error);
         throw error;
