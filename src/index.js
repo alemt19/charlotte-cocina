@@ -12,6 +12,7 @@ import { errorHandler } from './middlewares/error.middleware.js';
 import { prisma } from './db/client.js';
 import staffShiftRoutes from './routes/staffShift.routes.js';
 import kdsRoutes from './routes/kds.routes.js';
+import kitchenRoutes from './routes/kitchen.routes.js';
 
 const app = express();
 
@@ -26,6 +27,8 @@ app.use('/api/kitchen', kitchenStaffRoutes);
 app.use('/api/example', exampleRoutes);
 app.use(staffShiftRoutes);
 app.use(kdsRoutes);
+app.use(kitchenRoutes);
+
 
 app.get('/api', (req, res) => {
   res.json({ up: true });

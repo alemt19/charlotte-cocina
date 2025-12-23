@@ -44,4 +44,4 @@ const updateTaskStatusController = async (req, res) => {
     }
 };
 
-export { getQueueTasksController, assignTaskController, updateTaskStatusController };
+export { getQueueTasksController, assignTaskController, updateTaskStatusController, injectOrderController };

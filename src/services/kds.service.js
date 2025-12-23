@@ -40,7 +40,7 @@ const injectOrder = async (orderData) => {
         const recipe = await tx.recipe.findMany({
             where: {
                 productId: item.productId,
-                scope: serviceMode,
+                applyOn: "DINE_IN",
         },
         include: { ingredients: true },
         });
@@ -48,12 +48,12 @@ const injectOrder = async (orderData) => {
         for (const r of recipe) {
             for (const ingredient of r.ingredients) {
                 try {
-                    await axios.post('http://localhost:3000/api/kitchen/inventory/outbound', {
-                    itemId: ingredient.itemId,
-                    quantity: ingredient.quantity * item.quantity,
-                    reason: 'ORDER_INJECTION',
-                    sourceModule,
-            });
+                 //   await axios.post('http://localhost:3000/api/kitchen/inventory/outbound', {
+                 // itemId: ingredient.itemId,
+                 //quantity: ingredient.quantity * item.quantity,
+                 //reason: 'ORDER_INJECTION',
+                 //sourceModule,
+            //});
             } catch (error) {
                 throw new Error(`Fallo al descontar inventario del item ${ingredient.itemId}`);
             }
