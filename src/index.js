@@ -6,6 +6,7 @@ import categoryRoutes from './routes/category.routes.js';
 import productRoutes from './routes/product.routes.js';
 import recipeRoutes from './routes/recipe.routes.js';
 import inventoryRoutes from './routes/kitchen/inventory.routes.js';
+import assetsRoutes from './routes/kitchen/assets.routes.js';
 import morgan from 'morgan';
 import cors from 'cors';
 import kitchenStaffRoutes from './routes/kitchenStaff.routes.js';
@@ -45,6 +46,8 @@ app.use(errorHandler);
 
 // Montar rutas de cocina / inventario
 app.use('/api/kitchen/inventory', inventoryRoutes);
+// Montar rutas de activos
+app.use('/api/kitchen/assets', assetsRoutes);
 
 // Iniciar servidor
 const server = app.listen(envs.PORT, () =>
