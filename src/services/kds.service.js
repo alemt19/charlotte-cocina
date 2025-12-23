@@ -185,4 +185,75 @@ const updateTaskStatus = async (taskId, newStatus) => {
     }
 };
 
+export const markTaskServed = async (taskId, staffId) => {
+    const task = await prisma.kdsProductionQueue.findUnique({ where: { id: taskId } });
+        if (!task) throw new Error('Tarea no encontrada');
+            if (!['DINE_IN', 'TAKEOUT'].includes(task.serviceMode)) {
+                throw new Error('Modo de servicio incompatible');
+    }
+
+        return await prisma.kdsProductionQueue.update({
+            where: { id: taskId },
+            data: { status: 'SERVED', assignedWaiterId: staffId },
+    });
+};
+
+export const rejectTask = async (taskId, reason, reportedBy) => {
+        const task = await prisma.kdsProductionQueue.findUnique({ where: { id: taskId } });
+            if (!task) throw new Error('Tarea no encontrada');
+                if (task.status === 'SERVED') throw new Error('No se puede anular una tarea servida');
+
+        return await prisma.$transaction(async (tx) => {
+            const updated = await tx.kdsProductionQueue.update({
+            where: { id: taskId },
+            data: { status: 'REJECTED', rejectionReason: reason, reportedBy },
+    });
+
+    // Rollback inventario (ejemplo)
+    // await axios.post('/api/kitchen/inventory/inbound', { ... });
+
+    // Notificación externa (ejemplo)
+    // await axios.post(`/api/notify/${task.sourceModule}`, { orderId: task.externalOrderId, status: 'REJECTED' });
+
+    return updated;
+    });
+};
+
+export const cancelExternalOrder = async (externalId) => {
+    const tasks = await prisma.kdsProductionQueue.findMany({ where: { externalOrderId: externalId } });
+    if (!tasks.length) throw new Error('No hay tareas para esa orden');
+
+    return await prisma.$transaction(async (tx) => {
+        const cancelled = [];
+    for (const task of tasks) {
+        const updated = await tx.kdsProductionQueue.update({
+        where: { id: task.id },
+        data: { status: 'REJECTED' },
+        });
+        cancelled.push(updated);
+    }
+    return cancelled;
+    });
+};
+
+export const getTaskHistory = async (filters) => {
+    const { start_date, end_date, chef_id, status } = filters;
+
+    return await prisma.kdsProductionQueue.findMany({
+        where: {
+        ...(status ? { status } : {}),
+        ...(chef_id ? { assignedChefId: chef_id } : {}),
+        ...(start_date && end_date
+        ? { createdAt: { gte: new Date(start_date), lte: new Date(end_date) } }
+        : {}),
+    },
+        include: {
+        product: { select: { name: true } },
+        chef: true,
+        waiter: true,
+    },
+    orderBy: { createdAt: 'desc' },
+    });
+};
+
 export { injectOrder, getQueueTasks, assignTask, updateTaskStatus };
