@@ -56,8 +56,8 @@ const updateTaskStatusController = async (req, res) => {
 export const markTaskServedController = async (req, res) => {
     try {
         const { id } = req.params;
-        const { staff_id } = req.body;
-        const task = await markTaskServed(id, staff_id);
+        const { staffId } = req.body;
+        const task = await markTaskServed(id, staffId);
         res.status(200).json(task);
     } catch (error) {
         res.status(400).json({ message: error.message });
@@ -67,8 +67,8 @@ export const markTaskServedController = async (req, res) => {
 export const rejectTaskController = async (req, res) => {
     try {
         const { id } = req.params;
-        const { reason, reported_by } = req.body;
-        const task = await rejectTask(id, reason, reported_by);
+        const { reason, reportedBy } = req.body;
+        const task = await rejectTask(id, reason, reportedBy);
         res.status(200).json(task);
     } catch (error) {
         res.status(400).json({ message: error.message });
@@ -77,8 +77,8 @@ export const rejectTaskController = async (req, res) => {
 
 export const cancelExternalOrderController = async (req, res) => {
     try {
-        const { external_id } = req.params;
-        const tasks = await cancelExternalOrder(external_id);
+        const { externalId } = req.params;
+        const tasks = await cancelExternalOrder(externalId);
         res.status(200).json(tasks);
     } catch (error) {
         res.status(400).json({ message: error.message });

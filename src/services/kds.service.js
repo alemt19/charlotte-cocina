@@ -206,7 +206,7 @@ export const rejectTask = async (taskId, reason, reportedBy) => {
         return await prisma.$transaction(async (tx) => {
             const updated = await tx.kdsProductionQueue.update({
             where: { id: taskId },
-            data: { status: 'REJECTED', rejectionReason: reason, reportedBy },
+            data: { status: 'REJECTED' },
     });
 
     // Rollback inventario (ejemplo)
@@ -237,14 +237,14 @@ export const cancelExternalOrder = async (externalId) => {
 };
 
 export const getTaskHistory = async (filters) => {
-    const { start_date, end_date, chef_id, status } = filters;
+    const { startDate, endDate, chefId, status } = filters;
 
     return await prisma.kdsProductionQueue.findMany({
         where: {
         ...(status ? { status } : {}),
-        ...(chef_id ? { assignedChefId: chef_id } : {}),
-        ...(start_date && end_date
-        ? { createdAt: { gte: new Date(start_date), lte: new Date(end_date) } }
+        ...(chefId ? { assignedChefId: chefId } : {}),
+        ...(startDate && endDate
+        ? { createdAt: { gte: new Date(startDate), lte: new Date(endDate) } }
         : {}),
     },
         include: {
