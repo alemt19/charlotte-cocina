@@ -1,5 +1,32 @@
 import * as assetService from '../../services/kitchen/asset.service.js';
 import { createAssetSchema, updateAssetSchema, listAssetsSchema } from '../../schemas/kitchen/asset.schema.js';
+import { z } from 'zod';
+
+const assetLogSchema = z.object({
+  quantityChange: z.number(),
+  reason: z.string().min(1),
+  reportedBy: z.string().uuid()
+});
+
+// expose schema on app so route handlers can reuse if needed
+export const attachAssetLogSchema = (app) => app.set('zodAssetLogSchema', assetLogSchema);
+
+export const registerAssetLog = async (req, res) => {
+  const { id } = req.params;
+  const schema = req.app.get('zodAssetLogSchema');
+  const parsed = schema ? schema.safeParse(req.body) : null;
+  if (!parsed || !parsed.success) return res.status(400).json({ error: 'Body inválido', details: parsed ? parsed.error.format() : 'Schema missing' });
+
+  const { quantityChange, reason, reportedBy } = parsed.data;
+  try {
+    const result = await assetService.registerAssetLog({ assetId: id, quantityChange, reason, reportedBy });
+    return res.status(201).json(result);
+  } catch (err) {
+    console.error('Error registerAssetLog:', err);
+    if (err && err.code === 'KITCHENSTAFF_NOT_FOUND') return res.status(400).json({ error: 'reportedBy no válido' });
+    return res.status(500).json({ error: 'Error interno al registrar log de activo' });
+  }
+};
 
 export const createAsset = async (req, res) => {
   const parsed = createAssetSchema.safeParse(req.body);
