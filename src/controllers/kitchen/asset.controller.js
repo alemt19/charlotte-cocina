@@ -79,3 +79,14 @@ export const updateAsset = async (req, res) => {
     return res.status(500).json({ error: 'Error interno al actualizar activo' });
   }
 };
+
+export const getAssetLogs = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const logs = await assetService.getAssetLogs(id);
+    return res.json(logs);
+  } catch (err) {
+    console.error('Error getAssetLogs:', err);
+    return res.status(500).json({ error: 'Error interno al obtener logs de activo' });
+  }
+};

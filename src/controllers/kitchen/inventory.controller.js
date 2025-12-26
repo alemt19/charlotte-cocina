@@ -101,3 +101,14 @@ export const registerOutbound = async (req, res) => {
     return res.status(500).json({ error: 'Error interno al registrar salida' });
   }
 };
+
+export const getItemLogs = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const logs = await inventoryService.getItemLogs(id);
+    return res.json(logs);
+  } catch (err) {
+    console.error('Error getItemLogs:', err);
+    return res.status(500).json({ error: 'Error interno al obtener logs' });
+  }
+};
