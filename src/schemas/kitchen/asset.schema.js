@@ -17,7 +17,8 @@ export const updateAssetSchema = z.object({
 });
 
 export const listAssetsSchema = z.object({
-  status: z.enum(['OPERATIONAL', 'UNDER_MAINTENANCE', 'DAMAGED', 'LOST']).optional()
+  status: z.enum(['OPERATIONAL', 'UNDER_MAINTENANCE', 'DAMAGED', 'LOST']).optional(),
+  lastAuditBefore: z.string().optional()
 });
 
 export default { createAssetSchema, updateAssetSchema, listAssetsSchema };
