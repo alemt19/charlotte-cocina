@@ -3,7 +3,7 @@ import { prisma } from '../../db/client.js';
 export const createAsset = async ({ name, totalQuantity = 0, status = 'OPERATIONAL', lastAuditDate = null, notes = null }) => {
   const data = {
     name,
-    totalQuantity,
+    totalQuantity: Number(totalQuantity || 0),
     status,
     lastAuditDate: lastAuditDate ? new Date(lastAuditDate) : null,
     notes
@@ -31,9 +31,7 @@ export const getAssetById = async (id) => {
 export const updateAsset = async (id, updates) => {
   const data = {};
   if (updates.name !== undefined) data.name = updates.name;
-  if (updates.totalQuantity !== undefined) data.totalQuantity = updates.totalQuantity;
   if (updates.status !== undefined) data.status = updates.status;
-  if (updates.lastAuditDate !== undefined) data.lastAuditDate = updates.lastAuditDate ? new Date(updates.lastAuditDate) : null;
   if (updates.notes !== undefined) data.notes = updates.notes;
 
   return await prisma.kitchenAsset.update({ where: { id }, data });
@@ -67,6 +65,11 @@ export const registerAssetLog = async ({ assetId, quantityChange, reason, report
     }
 
     const newTotal = (asset.totalQuantity || 0) + Number(quantityChange);
+    if (newTotal < 0) {
+      const err = new Error('Asset stock would become negative');
+      err.code = 'ASSET_INSUFFICIENT_STOCK';
+      throw err;
+    }
 
     const updated = await tx.kitchenAsset.update({ where: { id: assetId }, data: { totalQuantity: newTotal } });
 
