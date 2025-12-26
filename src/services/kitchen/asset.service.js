@@ -76,3 +76,19 @@ export const registerAssetLog = async ({ assetId, quantityChange, reason, report
   return result;
 };
 
+export const getAssetLogs = async (assetId) => {
+  return await prisma.assetLog.findMany({
+    where: { assetId },
+    orderBy: { createdAt: 'desc' },
+    include: {
+      reporter: {
+        select: {
+          id: true,
+          workerCode: true,
+          role: true
+        }
+      }
+    }
+  });
+};
+

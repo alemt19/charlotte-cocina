@@ -145,3 +145,10 @@ export const registerOutbound = async ({ itemId, quantityChange, movementType, r
 
   return { message: 'Outbound registered', currentStock: result.updated.currentStock };
 };
+
+export const getItemLogs = async (itemId) => {
+  return await prisma.inventoryLog.findMany({
+    where: { itemId },
+    orderBy: { createdAt: 'desc' }
+  });
+};
