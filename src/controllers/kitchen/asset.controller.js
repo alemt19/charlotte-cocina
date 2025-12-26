@@ -1,12 +1,5 @@
 import * as assetService from '../../services/kitchen/asset.service.js';
-import { createAssetSchema, updateAssetSchema, listAssetsSchema } from '../../schemas/kitchen/asset.schema.js';
-import { z } from 'zod';
-
-const assetLogSchema = z.object({
-  quantityChange: z.number(),
-  reason: z.string().min(1),
-  reportedBy: z.string().uuid()
-});
+import { createAssetSchema, updateAssetSchema, listAssetsSchema, assetLogSchema } from '../../schemas/kitchen/asset.schema.js';
 
 // expose schema on app so route handlers can reuse if needed
 export const attachAssetLogSchema = (app) => app.set('zodAssetLogSchema', assetLogSchema);
@@ -24,6 +17,7 @@ export const registerAssetLog = async (req, res) => {
   } catch (err) {
     console.error('Error registerAssetLog:', err);
     if (err && err.code === 'KITCHENSTAFF_NOT_FOUND') return res.status(400).json({ error: 'reportedBy no válido' });
+    if (err && err.code === 'ASSET_INSUFFICIENT_STOCK') return res.status(400).json({ error: 'Stock del activo insuficiente' });
     return res.status(500).json({ error: 'Error interno al registrar log de activo' });
   }
 };
