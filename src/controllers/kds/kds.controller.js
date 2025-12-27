@@ -1,4 +1,4 @@
-import { injectOrderSchema } from '../schemas/kds.schema.js';
+import { injectOrderSchema } from '../../schemas/kds/kds.schema.js';
 import {
     injectOrder,
     getQueueTasks,
@@ -8,7 +8,7 @@ import {
     rejectTask,
     cancelExternalOrder,
     getTaskHistory,
-} from '../services/kds.service.js';
+} from '../../services/kds/kds.service.js';
 
 const injectOrderController = async (req, res) => {
     try {
@@ -67,8 +67,7 @@ export const markTaskServedController = async (req, res) => {
 export const rejectTaskController = async (req, res) => {
     try {
         const { id } = req.params;
-        const { reason, reportedBy } = req.body;
-        const task = await rejectTask(id, reason, reportedBy);
+        const task = await rejectTask(id);
         res.status(200).json(task);
     } catch (error) {
         res.status(400).json({ message: error.message });

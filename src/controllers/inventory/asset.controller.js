@@ -1,14 +1,10 @@
-import * as assetService from '../../services/kitchen/asset.service.js';
-import { createAssetSchema, updateAssetSchema, listAssetsSchema, assetLogSchema } from '../../schemas/kitchen/asset.schema.js';
-
-// expose schema on app so route handlers can reuse if needed
-export const attachAssetLogSchema = (app) => app.set('zodAssetLogSchema', assetLogSchema);
+import * as assetService from '../../services/inventory/asset.service.js';
+import { createAssetSchema, updateAssetSchema, listAssetsSchema, assetLogSchema } from '../../schemas/inventory/asset.schema.js';
 
 export const registerAssetLog = async (req, res) => {
   const { id } = req.params;
-  const schema = req.app.get('zodAssetLogSchema');
-  const parsed = schema ? schema.safeParse(req.body) : null;
-  if (!parsed || !parsed.success) return res.status(400).json({ error: 'Body inválido', details: parsed ? parsed.error.format() : 'Schema missing' });
+  const parsed = assetLogSchema.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: 'Body inválido', details: parsed.error.format() });
 
   const { quantityChange, reason, reportedBy } = parsed.data;
   try {

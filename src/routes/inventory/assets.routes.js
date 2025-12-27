@@ -1,6 +1,6 @@
 import express from 'express';
-import { createAsset, listAssets, getAsset, updateAsset, getAssetLogs } from '../../controllers/kitchen/asset.controller.js';
-import { registerAssetLog } from '../../controllers/kitchen/asset.controller.js';
+import { createAsset, listAssets, getAsset, updateAsset, getAssetLogs } from '../../controllers/inventory/asset.controller.js';
+import { registerAssetLog } from '../../controllers/inventory/asset.controller.js';
 
 const router = express.Router();
 

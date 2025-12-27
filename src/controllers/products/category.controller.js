@@ -1,5 +1,5 @@
 import categoryService from '../services/category.service.js';
-import { createCategorySchema, getCategoriesQuerySchema, updateCategorySchema } from '../schemas/category.schema.js';
+import { createCategorySchema, getCategoriesQuerySchema, updateCategorySchema } from '../../schemas/products/category.schema.js';
 
 const getCategories = async (req, res) => {
   try {

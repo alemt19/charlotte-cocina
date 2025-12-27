@@ -1,4 +1,4 @@
-import { prisma } from '../db/client.js';
+import { prisma } from '../../db/client.js';
 import axios from 'axios';
 
 const injectOrder = async (orderData) => {
@@ -198,7 +198,7 @@ export const markTaskServed = async (taskId, staffId) => {
     });
 };
 
-export const rejectTask = async (taskId, reason, reportedBy) => {
+export const rejectTask = async (taskId) => {
         const task = await prisma.kdsProductionQueue.findUnique({ where: { id: taskId } });
             if (!task) throw new Error('Tarea no encontrada');
                 if (task.status === 'SERVED') throw new Error('No se puede anular una tarea servida');

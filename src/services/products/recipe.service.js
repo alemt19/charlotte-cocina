@@ -1,4 +1,4 @@
-import { prisma } from '../db/client.js';
+import { prisma } from '../../db/client.js';
 
 const createRecipe = async (data) => {
   const { product_id, inventory_item_id, quantity_required, apply_on } = data;
