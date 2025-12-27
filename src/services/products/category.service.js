@@ -1,7 +1,17 @@
-import prisma from '../../db/client.js';
+import { prisma } from '../../db/client.js';
 
-const getCategories = async () => {
-  return await prisma.kitchenCategory.findMany();
+const getCategories = async (query = {}) => {
+  // Si query.activeOnly está definido, filtramos por ese valor
+  let where = {};
+  if (typeof query.activeOnly !== 'undefined') {
+    // Acepta 'true', 'false', true, false
+    if (typeof query.activeOnly === 'string') {
+      where.isActive = query.activeOnly === 'true';
+    } else {
+      where.isActive = !!query.isActive;
+    }
+  }
+  return await prisma.kitchenCategory.findMany({ where });
 };
 
 const getCategoryById = async (id) => {

@@ -1,4 +1,4 @@
-import prisma from '../../db/client.js';
+import { prisma } from '../../db/client.js';
 
 const getProducts = async () => {
   return await prisma.kitchenProduct.findMany({

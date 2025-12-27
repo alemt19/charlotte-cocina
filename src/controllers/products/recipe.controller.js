@@ -1,5 +1,5 @@
 
-import recipeService from '../services/recipe.service.js';
+import recipeService from '../../services/products/recipe.service.js';
 
 const createRecipe = async (req, res, next) => {
   try {

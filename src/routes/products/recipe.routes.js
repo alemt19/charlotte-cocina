@@ -1,6 +1,6 @@
 
 import { Router } from 'express';
-import recipeController from '../controllers/recipe.controller.js';
+import recipeController from '../../controllers/products/recipe.controller.js';
 
 const router = Router();
 

@@ -1,4 +1,4 @@
-import categoryService from '../services/category.service.js';
+import categoryService from '../../services/products/category.service.js';
 import { createCategorySchema, getCategoriesQuerySchema, updateCategorySchema } from '../../schemas/products/category.schema.js';
 
 const getCategories = async (req, res) => {
@@ -13,7 +13,7 @@ const getCategories = async (req, res) => {
       });
     }
 
-    const categories = await categoryService.findCategories(req.query);
+    const categories = await categoryService.getCategories(req.query);
 
     return res.status(200).json({
       success: true,
@@ -22,6 +22,7 @@ const getCategories = async (req, res) => {
     });
 
   } catch (error) {
+    console.error('Error en getCategories:', error);
     return res.status(500).json({
       success: false,
       error: "SERVER_ERROR",

@@ -1,6 +1,6 @@
 import { Router } from 'express';
 // IMPORTANTE: Aquí importamos el controlador y le asignamos el nombre "categoryController"
-import categoryController from '../controllers/category.controller.js';
+import categoryController from '../../controllers/products/category.controller.js';
 
 const router = Router();
 
