@@ -1,9 +1,5 @@
 import * as inventoryService from '../../services/inventory/inventory.service.js';
-<<<<<<< HEAD
 import { createItemSchema, listItemsSchema, updateItemSchema, inboundSchema, outboundSchema } from '../../schemas/inventory/inventory.schema.js';
-=======
-import { createItemSchema, listItemsSchema, updateItemSchema, inboundSchema, outboundSchema } from '../../schemas/kitchen/inventory.schema.js';
->>>>>>> 1b3e0babd46753c85b3cff88c229233c2a31d40c
 
 export const listItems = async (req, res) => {
   const parsed = listItemsSchema.safeParse(req.query);

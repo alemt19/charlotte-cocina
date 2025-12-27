@@ -25,3 +25,7 @@ export const createUser = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+export const securePing = async (req, res) => {
+  return res.status(200).json({ ok: true, message: 'Acceso autorizado (ejemplo)' });
+};

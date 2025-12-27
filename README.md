@@ -72,6 +72,16 @@ Este proyecto usa **PostgreSQL**, pero no necesitas instalar ni crear nada.
 2.  En VS Code, busca la carpeta del proyecto y crea un nuevo archivo llamado `.env` (punto env).
 3.  Abre el archivo `.env` y pega exactamente el contenido que te proporcionaron.
 
+### Variables para Seguridad (protección de endpoints)
+
+Si vas a proteger rutas consultando el Módulo de Seguridad, agrega también en `.env`:
+
+```bash
+SECURITY_BASE_URL=
+
+SECURITY_HAS_PERMISSION_PATH=/api/seguridad/auth/hasPermission
+```
+
 ---
 
 ## Paso 5: Generar el Cliente de Prisma
@@ -109,6 +119,12 @@ Si ves un mensaje como este:
 
 Abre tu navegador y entra a: [http://localhost:3000/api](http://localhost:3000/api)
 Deberías ver un mensaje `{"up":true}`.
+
+---
+
+## Ejemplo de rutas protegidas
+
+En [src/routes/example/example.routes.js](src/routes/example/example.routes.js) hay endpoints de ejemplo que muestran cómo usar el middleware `requirePermission(resource, method)` delegando la validación al Módulo de Seguridad.
 
 ---
 

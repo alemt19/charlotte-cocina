@@ -17,12 +17,11 @@ app.use(express.static('public'));
 app.use(morgan('dev'));
 app.use(cors({ origin: envs.ALLOWED_ORIGINS || '*' }));
 
-//  Middleware de errores
-app.use(errorHandler);
-
 //  Luego las rutas
 app.use('/api/example', exampleRoutes);
 app.use(`${BASE_PATH}`, router);
+
+app.use(errorHandler);
 
 // Iniciar servidor
 const server = app.listen(envs.PORT, () =>
