@@ -115,11 +115,11 @@ const toggleProductStatus = async (req, res, next) => {
     const { id } = req.params;
     const { isActive } = req.body; 
 
-    if (typeof is_active !== 'boolean') {
+    if (typeof isActive !== 'boolean') {
       return res.status(400).json({
         success: false,
         error: "VALIDATION_ERROR",
-        message: "Falta el campo 'is_active' (true/false) o no es booleano."
+        message: "Falta el campo 'isActive' (true/false) o no es booleano."
       });
     }
 
