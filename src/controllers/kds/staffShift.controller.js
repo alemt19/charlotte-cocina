@@ -1,4 +1,4 @@
-import { registerShift, getShiftHistory } from '../services/staffShift.service.js';
+import { registerShift, getShiftHistory } from '../../services/kds/staffShift.service.js';
 
 const registerShiftController = async (req, res, next) => {
     try {

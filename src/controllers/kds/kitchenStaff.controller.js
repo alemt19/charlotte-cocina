@@ -5,9 +5,9 @@ import {
     updateKitchenStaff,
     deleteKitchenStaff,
     getActiveKitchenStaff,
-} from '../services/kitchenStaff.service.js';
+} from '../../services/kds/kitchenStaff.service.js';
 
-import { createKitchenStaffSchema, updateKitchenStaffSchema, idSchema } from '../schemas/kitchenStaff.schema.js';
+import { createKitchenStaffSchema, updateKitchenStaffSchema, idSchema } from '../../schemas/kitchenStaff.schema.js';
 
 const getAll = async (req, res, next) => {
     try {
@@ -76,6 +76,7 @@ const create = async (req, res, next) => {
     }
 
     const staff = await createKitchenStaff(validation.data);
+    res.status(201).json(staff);
     } catch (error) {
     next(error);
     }

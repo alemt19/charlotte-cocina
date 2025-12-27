@@ -1,4 +1,4 @@
-import { prisma } from '../db/client.js';
+import { prisma } from '../../db/client.js';
 
 const registerShift = async (staffId, type) => {
     try {

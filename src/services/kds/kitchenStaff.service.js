@@ -1,4 +1,4 @@
-import { prisma } from '../db/client.js';
+import { prisma } from '../../db/client.js';
 
 const getAllKitchenStaff = async () => {
     try {
@@ -24,6 +24,20 @@ const getKitchenStaffById = async (id) => {
 
 const createKitchenStaff = async (data) => {
     try {
+        
+        const existingStaff = await prisma.kitchenStaff.findFirst({
+            where: {
+                OR: [
+                    { workerCode: data.workerCode },
+                    { userId: data.userId }
+                ]
+            },
+        });
+
+        if (existingStaff) {
+            throw new Error('Ya existe un KitchenStaff con el mismo workerCode o userId.');
+        }
+
         return await prisma.kitchenStaff.create({
             data: {
                 userId: data.userId,
@@ -32,6 +46,10 @@ const createKitchenStaff = async (data) => {
         },
     });
     } catch (error) {
+
+        if (error.message.includes('Ya existe un KitchenStaff')) {
+            throw error;
+        }
     console.error('Error en createKitchenStaff:', error);
     throw new Error('No se pudo crear el KitchenStaff. Revisa los datos enviados.');
     }

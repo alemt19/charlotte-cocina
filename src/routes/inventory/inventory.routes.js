@@ -1,5 +1,5 @@
 import express from 'express';
-import { listItems, createItem, getItem, updateItem, registerInbound, registerOutbound, getItemLogs } from '../../controllers/kitchen/inventory.controller.js';
+import { listItems, createItem, getItem, updateItem, registerInbound, registerOutbound, getItemLogs } from '../../controllers/inventory/inventory.controller.js';
 
 const router = express.Router();
 

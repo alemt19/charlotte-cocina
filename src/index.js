@@ -2,19 +2,14 @@ import express from 'express';
 import bodyParser from 'body-parser';
 import { envs } from './config/envs.js';
 import exampleRoutes from './routes/example/example.routes.js';
-import inventoryRoutes from './routes/kitchen/inventory.routes.js';
-import assetsRoutes from './routes/kitchen/assets.routes.js';
-import { attachAssetLogSchema } from './controllers/kitchen/asset.controller.js';
 import morgan from 'morgan';
 import cors from 'cors';
-import kitchenStaffRoutes from './routes/kitchenStaff.routes.js';
 import { errorHandler } from './middlewares/error.middleware.js';
 import { prisma } from './db/client.js';
-import staffShiftRoutes from './routes/staffShift.routes.js';
-import kdsRoutes from './routes/kds.routes.js';
-import kitchenRoutes from './routes/kitchen.routes.js';
+import router from './routes/index.routes.js';
 
 const app = express();
+const BASE_PATH = '/api/kitchen';
 
 //  Middlewares globales
 app.use(bodyParser.json());
@@ -22,28 +17,12 @@ app.use(express.static('public'));
 app.use(morgan('dev'));
 app.use(cors({ origin: envs.ALLOWED_ORIGINS || '*' }));
 
-//  Luego las rutas
-app.use('/api/kitchen', kitchenStaffRoutes);
-app.use('/api/example', exampleRoutes);
-app.use(staffShiftRoutes);
-app.use(kdsRoutes);
-app.use(kitchenRoutes);
-
-
-app.get('/api', (req, res) => {
-  res.json({ up: true });
-});
-
 //  Middleware de errores
 app.use(errorHandler);
 
-// Montar rutas de cocina / inventario
-app.use('/api/kitchen/inventory', inventoryRoutes);
-// Montar rutas de activos
-app.use('/api/kitchen/assets', assetsRoutes);
-
-// Attach Zod schema for asset logs
-attachAssetLogSchema(app);
+//  Luego las rutas
+app.use('/api/example', exampleRoutes);
+app.use(`${BASE_PATH}`, router);
 
 // Iniciar servidor
 const server = app.listen(envs.PORT, () =>

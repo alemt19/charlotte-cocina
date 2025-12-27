@@ -1,4 +1,4 @@
-import * as inventoryService from '../../services/kitchen/inventory.service.js';
+import * as inventoryService from '../../services/inventory/inventory.service.js';
 import { createItemSchema, listItemsSchema, updateItemSchema, inboundSchema, outboundSchema } from '../../schemas/kitchen/inventory.schema.js';
 
 export const listItems = async (req, res) => {
