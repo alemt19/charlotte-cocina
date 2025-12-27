@@ -1,110 +1,90 @@
-import { prisma } from '../db/client.js';
+import prisma from '../db/client.js';
 
-// 1. Obtener categorías
-const findCategories = async (query) => {
-  try {
-    const { activeOnly } = query || {};
-    const whereClause = activeOnly === 'true' ? { isActive: true } : {};
-
-    return await prisma.kitchenCategory.findMany({
-      where: whereClause,
-      orderBy: { name: 'asc' },
-      select: {
-        id: true,
-        name: true,
-        isActive: true
-      }
-    });
-  } catch (error) {
-    console.error("Error en findCategories:", error);
-    throw error;
-  }
-};
-
-// 2. Crear categoría
-const createCategory = async (data) => {
-  try {
-    return await prisma.kitchenCategory.create({
-      data: {
-        name: data.name.trim(),
-        isActive: true
-      },
-      select: {
-        id: true,
-        name: true,
-        isActive: true
-      }
-    });
-  } catch (error) {
-    console.error("Error en createCategory:", error);
-    throw error;
-  }
-};
-
-// 3. Actualizar categoría
-const updateCategory = async (id, data) => {
-  try {
-    // A. Verificar si existe la categoría (ID es texto/UUID)
-    const existing = await prisma.kitchenCategory.findUnique({
-      where: { id: id }
-    });
-
-    if (!existing) {
-      throw new Error("NOT_FOUND");
+const getProducts = async () => {
+  return await prisma.kitchenProduct.findMany({
+    include: {
+      category: true 
     }
+  });
+};
 
-    // B. Preparar datos para actualizar
-    const dataToUpdate = {};
-    if (data.name !== undefined) dataToUpdate.name = data.name.trim();
-    // Si envían is_active, lo usamos. Si no, mantenemos el que ya tenía.
-    if (data.is_active !== undefined) dataToUpdate.isActive = data.is_active;
-
-    // C. Actualizar en Base de Datos
-    const updated = await prisma.kitchenCategory.update({
-      where: { id: id },
-      data: dataToUpdate,
-      select: {
-        id: true,
-        name: true,
-        isActive: true
+// --- ENDPOINT 7: Obtener Producto por ID ---
+const getProductById = async (id) => {
+  const cleanId = id.trim();
+  
+  const product = await prisma.kitchenProduct.findUnique({
+    where: { id: cleanId },
+    include: {
+      category: true, // Trae info de la categoría
+      recipes: {      // Trae la receta
+        include: {
+          inventoryItem: true // Trae el nombre real del insumo
+        }
       }
-    });
-
-    return updated;
-
-  } catch (error) {
-    console.error("Error en updateCategory:", error);
-    throw error;
-  }
-};
-
-// Exportación final (necesaria para que el controlador lo vea)
-// 4. Eliminar categoría
-const deleteCategory = async (id) => {
-  try {
-    // A. Verificar si existe
-    const existing = await prisma.kitchenCategory.findUnique({
-      where: { id: id }
-    });
-
-    if (!existing) {
-      throw new Error("NOT_FOUND");
     }
+  });
 
-    // B. Eliminar
-    return await prisma.kitchenCategory.delete({
-      where: { id: id }
-    });
-
-  } catch (error) {
-    // Tip: Si hay productos vinculados a esta categoría, Prisma lanzará un error aquí.
-    console.error("Error en deleteCategory:", error);
-    throw error;
+  if (!product) {
+    throw new Error("NOT_FOUND");
   }
+
+  return product;
 };
+
+const createProduct = async (data) => {
+  return await prisma.kitchenProduct.create({ data });
+};
+
+// --- ENDPOINT 8: Actualizar Producto ---
+const updateProduct = async (id, data) => {
+  const cleanId = id.trim();
+
+  // 1. Verificamos si existe antes de intentar actualizar
+  const exists = await prisma.kitchenProduct.findUnique({ where: { id: cleanId } });
+  if (!exists) throw new Error("NOT_FOUND");
+
+  // 2. Actualizamos
+  return await prisma.kitchenProduct.update({
+    where: { id: cleanId },
+    data: data
+  });
+};
+
+const deleteProduct = async (id) => {
+  const cleanId = id.trim();
+  // Verificamos existencia primero para lanzar el error correcto
+  const exists = await prisma.kitchenProduct.findUnique({ where: { id: cleanId } });
+  if (!exists) throw new Error("NOT_FOUND");
+
+  return await prisma.kitchenProduct.delete({
+    where: { id: cleanId }
+  });
+};
+
+// Endpoint 6 (Toggle)
+const toggleProductStatus = async (id, isActiveValue) => {
+  const cleanId = id.trim();
+  const productExists = await prisma.kitchenProduct.findUnique({
+    where: { id: cleanId }
+  });
+
+  if (!productExists) {
+    throw new Error("NOT_FOUND");
+  }
+
+  return await prisma.kitchenProduct.update({
+    where: { id: cleanId },
+    data: {
+      isActive: isActiveValue
+    }
+  });
+};
+
 export default {
-  findCategories,
-  createCategory,
-  updateCategory,
-  deleteCategory,
+  getProducts,
+  getProductById,
+  createProduct,
+  updateProduct,
+  deleteProduct,
+  toggleProductStatus
 };

@@ -4,6 +4,7 @@ import { envs } from './config/envs.js';
 import exampleRoutes from './routes/example/example.routes.js';
 import categoryRoutes from './routes/category.routes.js';
 import productRoutes from './routes/product.routes.js';
+import recipeRoutes from './routes/recipe.routes.js';
 import morgan from 'morgan';
 import cors from 'cors';
 
@@ -25,6 +26,7 @@ app.get('/api', (req, res) => {
 // Montar rutas de ejemplo
 app.use('/api/kitchen/categories', categoryRoutes);
 app.use('/api/kitchen/products', productRoutes);
+app.use('/api/kitchen/recipes', recipeRoutes);
 app.use('/api/example', exampleRoutes);
 
 // Iniciar servidor

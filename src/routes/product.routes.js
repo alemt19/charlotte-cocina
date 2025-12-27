@@ -1,35 +1,19 @@
 import { Router } from 'express';
 import productController from '../controllers/product.controller.js';
-import { validateSchema } from '../middlewares/validateSchema.js';
-import { 
-  createProductSchema, 
-  getProductsQuerySchema
-  // toggleProductStatusSchema 
-} from '../schemas/product.schema.js';
 
 const router = Router();
 
-// 1. Obtener productos
-router.get('/', validateSchema(getProductsQuerySchema), productController.getProducts);
+// Base: /api/kitchen/products
 
-// 2. Crear producto
-router.post('/', validateSchema(createProductSchema), productController.createProduct);
+router.get('/', productController.getProducts);          // Listar
+router.post('/', productController.createProduct);       // Crear
 
-// --- RUTAS ESPECÍFICAS (Deben ir antes de /:id) ---
+// Rutas dinámicas por ID
+router.get('/:id', productController.getProductById);    // Endpoint 7 (GET One)
+router.put('/:id', productController.updateProduct);     // Endpoint 8 (PUT Update)
+router.delete('/:id', productController.deleteProduct);  // Eliminar
 
-// 5. Endpoint 6: Cambiar estado (PATCH /api/kitchen/products/:id/status)
-router.patch(
-  '/:id/status', 
-  // validateSchema(toggleProductStatusSchema), // Descomentar si tienes el schema listo
-  productController.toggleProductStatus
-);
-
-// --- RUTAS GENÉRICAS (Al final) ---
-
-// 3. Actualizar producto (PATCH /api/kitchen/products/:id)
-router.patch('/:id', productController.updateProduct);
-
-// 4. Eliminar producto (DELETE /api/kitchen/products/:id)
-router.delete('/:id', productController.deleteProduct);
+// Rutas especiales
+router.patch('/:id/status', productController.toggleProductStatus); // Toggle
 
 export default router;
