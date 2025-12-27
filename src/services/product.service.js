@@ -1,8 +1,24 @@
 import prisma from '../db/client.js';
 
 const getProducts = async () => {
-  // CAMBIO: Usamos kitchenProduct
-  return await prisma.kitchenProduct.findMany();
+  return await prisma.kitchenProduct.findMany({
+    include: {
+      category: true 
+    }
+  });
+};
+
+const getProductById = async (id) => {
+  const cleanId = id.trim();
+  const product = await prisma.kitchenProduct.findUnique({
+    where: { id: cleanId },
+    include: {
+      recipes: true 
+    }
+  });
+  
+  if (!product) throw new Error("NOT_FOUND");
+  return product;
 };
 
 const createProduct = async (data) => {
@@ -10,23 +26,29 @@ const createProduct = async (data) => {
 };
 
 const updateProduct = async (id, data) => {
+  const cleanId = id.trim();
+
+  const exists = await prisma.kitchenProduct.findUnique({ where: { id: cleanId } });
+  if (!exists) throw new Error("NOT_FOUND");
+
   return await prisma.kitchenProduct.update({
-    where: { id },
-    data
+    where: { id: cleanId },
+    data: data
   });
 };
 
 const deleteProduct = async (id) => {
+  const cleanId = id.trim();
+  const exists = await prisma.kitchenProduct.findUnique({ where: { id: cleanId } });
+  if (!exists) throw new Error("NOT_FOUND");
+
   return await prisma.kitchenProduct.delete({
-    where: { id }
+    where: { id: cleanId }
   });
 };
 
-// --- FUNCIÓN DEL ENDPOINT 6 (CORREGIDA) ---
 const toggleProductStatus = async (id, isActiveValue) => {
   const cleanId = id.trim();
-
-  // 1. Verificamos si existe (usando kitchenProduct)
   const productExists = await prisma.kitchenProduct.findUnique({
     where: { id: cleanId }
   });
@@ -35,7 +57,6 @@ const toggleProductStatus = async (id, isActiveValue) => {
     throw new Error("NOT_FOUND");
   }
 
-  // 2. Actualizamos
   return await prisma.kitchenProduct.update({
     where: { id: cleanId },
     data: {
@@ -43,25 +64,12 @@ const toggleProductStatus = async (id, isActiveValue) => {
     }
   });
 };
-// Función para buscar un producto por su ID (Endpoint 7)
-const getProductById = async (id) => {
-  return await prisma.kitchenProduct.findUnique({
-    where: { id },
-    include: {
-      category: true, // Trae la categoría
-      recipes: {      // Trae las recetas
-        include: {
-          inventoryItem: true // Trae el nombre del insumo dentro de la receta
-        }
-      }
-    }
-  });
-};
+
 export default {
   getProducts,
+  getProductById,
   createProduct,
   updateProduct,
   deleteProduct,
-  toggleProductStatus,
-  getProductById,
+  toggleProductStatus
 };

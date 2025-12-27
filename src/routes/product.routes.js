@@ -3,17 +3,16 @@ import productController from '../controllers/product.controller.js';
 
 const router = Router();
 
-// Base: /api/kitchen/products
 
-router.get('/', productController.getProducts);          // Listar
-router.post('/', productController.createProduct);       // Crear
 
-// Rutas dinámicas por ID
-router.get('/:id', productController.getProductById);    // Endpoint 7 (GET One)
-router.put('/:id', productController.updateProduct);     // Endpoint 8 (PUT Update)
-router.delete('/:id', productController.deleteProduct);  // Eliminar
+router.get('/', productController.getProducts);          
+router.post('/', productController.createProduct);       
 
-// Rutas especiales
-router.patch('/:id/status', productController.toggleProductStatus); // Toggle
+
+router.get('/:id', productController.getProductById);   
+router.put('/:id', productController.updateProduct);     
+router.delete('/:id', productController.deleteProduct);  
+
+router.patch('/:id/status', productController.toggleProductStatus); 
 
 export default router;

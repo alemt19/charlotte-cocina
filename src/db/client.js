@@ -1,4 +1,4 @@
-// Importamos desde la carpeta generada por tu equipo
+
 import { PrismaClient } from '../generated/prisma/index.js';
 
 const globalForPrisma = global;

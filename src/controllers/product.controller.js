@@ -1,6 +1,5 @@
 import productService from '../services/product.service.js';
 
-// --- LISTAR ---
 const getProducts = async (req, res, next) => {
   try {
     const products = await productService.getProducts();
@@ -14,7 +13,6 @@ const getProducts = async (req, res, next) => {
   }
 };
 
-// --- ENDPOINT 7: Obtener por ID ---
 const getProductById = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -33,14 +31,12 @@ const getProductById = async (req, res, next) => {
         message: "El recurso solicitado no existe." 
       });
     }
-    next(error); // Pasa al manejador de errores global si es otro tipo
+    next(error); 
   }
 };
 
-// --- CREAR ---
 const createProduct = async (req, res, next) => {
   try {
-    // Aquí deberías validar con Zod si tienes el schema listo
     const newProduct = await productService.createProduct(req.body);
     res.status(201).json({ 
       success: true, 
@@ -52,15 +48,12 @@ const createProduct = async (req, res, next) => {
   }
 };
 
-// --- ENDPOINT 8: Actualizar (PUT) ---
 const updateProduct = async (req, res, next) => {
   try {
     const { id } = req.params;
     
-    // Extracción de datos (Snake Case del Front -> Camel Case para el Back)
     const { name, description, base_price, category_id, image_url } = req.body;
 
-    // Validación básica manual (para cumplir "cero errores" si falla Zod o no existe)
     if (base_price && typeof base_price !== 'number' && isNaN(parseFloat(base_price))) {
         return res.status(400).json({
             success: false,
@@ -69,11 +62,10 @@ const updateProduct = async (req, res, next) => {
         });
     }
 
-    // Preparar objeto limpio para Prisma
     const dataToUpdate = {
       ...(name && { name }),
       ...(description && { description }),
-      ...(base_price !== undefined && { basePrice: parseFloat(base_price) }), // Convertimos a número por si acaso
+      ...(base_price !== undefined && { basePrice: parseFloat(base_price) }), 
       ...(category_id && { categoryId: category_id }),
       ...(image_url && { imageUrl: image_url })
     };
@@ -98,7 +90,6 @@ const updateProduct = async (req, res, next) => {
   }
 };
 
-// --- ELIMINAR ---
 const deleteProduct = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -119,11 +110,10 @@ const deleteProduct = async (req, res, next) => {
   }
 };
 
-// --- TOGGLE STATUS ---
 const toggleProductStatus = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { is_active } = req.body;
+    const { isActive } = req.body; 
 
     if (typeof is_active !== 'boolean') {
       return res.status(400).json({
@@ -133,8 +123,8 @@ const toggleProductStatus = async (req, res, next) => {
       });
     }
 
-    const updatedProduct = await productService.toggleProductStatus(id, is_active);
-
+    const updatedProduct = await productService.toggleProductStatus(id, isActive);
+    
     res.status(200).json({
       success: true,
       message: "Estado del producto actualizado",
