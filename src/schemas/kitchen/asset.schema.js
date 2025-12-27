@@ -1,0 +1,28 @@
+import { z } from 'zod';
+
+export const createAssetSchema = z.object({
+  name: z.string().min(1),
+  totalQuantity: z.number().int().nonnegative().optional(),
+  status: z.enum(['OPERATIONAL', 'UNDER_MAINTENANCE', 'DAMAGED', 'LOST']).optional(),
+  lastAuditDate: z.string().optional(), // ISO date string
+  notes: z.string().optional()
+});
+
+export const updateAssetSchema = z.object({
+  name: z.string().min(1).optional(),
+  status: z.enum(['OPERATIONAL', 'UNDER_MAINTENANCE', 'DAMAGED', 'LOST']).optional(),
+  notes: z.string().optional()
+});
+
+export const listAssetsSchema = z.object({
+  status: z.enum(['OPERATIONAL', 'UNDER_MAINTENANCE', 'DAMAGED', 'LOST']).optional(),
+  lastAuditBefore: z.string().optional()
+});
+
+export const assetLogSchema = z.object({
+  quantityChange: z.number(),
+  reason: z.string().min(1),
+  reportedBy: z.string().uuid()
+});
+
+export default { createAssetSchema, updateAssetSchema, listAssetsSchema };

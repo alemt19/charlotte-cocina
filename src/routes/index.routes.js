@@ -7,8 +7,6 @@ import assetsRoutes from './inventory/assets.routes.js';
 import categoryRoutes from './products/category.routes.js';
 import productRoutes from './products/product.routes.js';
 import recipeRoutes from './products/recipe.routes.js';
-import morgan from 'morgan';
-import { ca } from 'zod/locales';
 
 const router = Router();
 
