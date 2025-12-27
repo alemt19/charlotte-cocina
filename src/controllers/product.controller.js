@@ -143,11 +143,38 @@ const toggleProductStatus = async (req, res, next) => {
   }
 };
 
+// Endpoint 10
+const getProductRecipe = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const recipe = await productService.getProductRecipe(id);
+    res.json(recipe);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Endpoint 11
+const checkAvailability = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await productService.checkProductAvailability(id);
+    res.json(result);
+  } catch (error) {
+    if (error.message === "NOT_FOUND") {
+      return res.status(404).json({ error: "Producto no encontrado" });
+    }
+    res.status(500).json({ error: error.message });
+  }
+};
+
 export default {
   getProducts,
   getProductById,
   createProduct,
   updateProduct,
   deleteProduct,
-  toggleProductStatus
+  toggleProductStatus,
+  getProductRecipe,   
+  checkAvailability
 };
