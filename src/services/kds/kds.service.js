@@ -1,3 +1,4 @@
+import { envs } from '../../config/envs.js';
 import { prisma } from '../../db/client.js';
 import axios from 'axios';
 
@@ -10,6 +11,25 @@ const injectOrder = async (orderData) => {
         customerName,
         items,
     } = orderData;
+
+    for (const item of items) {
+        try {
+            const { data } = await axios.get(`${envs.API_URL}/api/kitchen/products/${item.productId}/availability`);
+            
+            if (data.status === 'UNAVAILABLE') {
+                const missing = data.missing_items && data.missing_items.length > 0 
+                    ? `: ${data.missing_items.join(', ')}` 
+                    : '';
+                throw new Error(`El producto ${item.productId} no está disponible. Razón: ${data.reason}${missing}`);
+            }
+        } catch (error) {
+            if (error.message && error.message.includes('no está disponible')) {
+                throw error;
+            }
+            const errorMsg = error.response?.data?.message || error.response?.data?.error || error.message;
+            throw new Error(`Error verificando disponibilidad del producto ${item.productId}: ${errorMsg}`);
+        }
+    }
 
     return await prisma.$transaction(async (tx) => {
         const productIds = items.map(item => item.productId);
@@ -43,7 +63,6 @@ const injectOrder = async (orderData) => {
             },
             include: { inventoryItem: true },
         });
-
         let deductedCount = 0;
 
         for (const r of recipe) {
@@ -52,16 +71,17 @@ const injectOrder = async (orderData) => {
             }
 
             try {
-                // await axios.post('http://localhost:3000/api/kitchen/inventory/outbound', {
-                //     itemId: r.inventoryItemId,
-                //     quantity: r.quantityRequired * item.quantity,
-                //     reason: 'ORDER_INJECTION',
-                //     sourceModule,
-                // });
-                console.log(`Descontando ${r.quantityRequired * item.quantity} del item ${r.inventoryItem.name}`);
+                await axios.post(`${envs.API_URL}/api/kitchen/inventory/outbound`, {
+                    itemId: r.inventoryItemId,
+                    quantityChange: r.quantityRequired * item.quantity,
+                    movementType: 'SALE',
+                    reason: `Descuento por orden ${externalOrderId} - producto ${item.productId}`,
+                });
                 deductedCount++;
             } catch (error) {
-                throw new Error(`Fallo al descontar inventario del item ${r.inventoryItemId}`);
+                console.error('Error descontando inventario:', error.response?.data || error.message);
+                const reason = error.response?.data?.message || error.response?.data?.error || error.message;
+                throw new Error(`Fallo al descontar inventario del item ${r.inventoryItemId}: ${reason}`);
             }
         }
 
