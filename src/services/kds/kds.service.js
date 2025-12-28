@@ -86,16 +86,6 @@ const getQueueTasks = async (status) => {
                 { priorityLevel: 'asc' },
                 { createdAt: 'asc' },
         ],
-        select: {
-            id: true,
-            externalOrderId: true,
-            productId: true,
-            quantity: true,
-            preparationNotes: true,
-            status: true,
-            priorityLevel: true,
-            createdAt: true,
-        },
     });
 
         const productIds = [...new Set(tasks.map(t => t.productId))];

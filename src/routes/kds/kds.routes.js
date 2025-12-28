@@ -31,7 +31,7 @@ router.patch('/kds/:id/served', markTaskServedController);
 router.post('/kds/:id/reject', rejectTaskController);
 
 // Endpoint 7: Cancelar orden externa completa
-router.post('/kds/order/:external_id/cancel', cancelExternalOrderController);
+router.post('/kds/order/:externalId/cancel', cancelExternalOrderController);
 
 // Endpoint 8: Historial de tareas
 router.get('/kds/history', getTaskHistoryController);
