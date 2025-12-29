@@ -21,8 +21,32 @@ const getProductById = async (id) => {
   return product;
 };
 
+// --- MODIFICADO PARA MANEJAR IMÁGENES ---
 const createProduct = async (data) => {
-  return await prisma.kitchenProduct.create({ data });
+  let finalImageUrl = null;
+
+  // Si recibimos un archivo desde el controlador
+  if (data.imageFile) {
+    // Detectamos si estamos en local o prod
+    const appUrl = process.env.APP_URL || 'http://localhost:3000';
+    // Construimos la URL: http://localhost:3000/public/uploads/nombre-archivo.jpg
+    finalImageUrl = `${appUrl}/public/uploads/${data.imageFile.filename}`;
+  } else if (data.imageUrl) {
+    // Si mandaron una URL directa (string)
+    finalImageUrl = data.imageUrl;
+  }
+
+  // Preparamos los datos para Prisma
+  // Convertimos inputs a los nombres de la DB
+  const prismaData = {
+    name: data.name,
+    description: data.description,
+    basePrice: parseFloat(data.basePrice || data.base_price), // Soporta ambos
+    categoryId: data.categoryId || data.category_id,
+    imageUrl: finalImageUrl // <--- Guardamos la URL generada
+  };
+
+  return await prisma.kitchenProduct.create({ data: prismaData });
 };
 
 const updateProduct = async (id, data) => {
@@ -65,11 +89,10 @@ const toggleProductStatus = async (id, isActiveValue) => {
   });
 };
 
-// --- ENDPOINT 10: Ver Receta del Producto ---
+// --- ENDPOINT 10: Ver Receta del Producto (CORREGIDO A CAMELCASE) ---
 const getProductRecipe = async (productId) => {
   const cleanId = productId.trim();
   
-  // Buscamos las recetas de este producto e incluimos los datos del ingrediente (inventoryItem)
   const recipes = await prisma.recipe.findMany({
     where: { productId: cleanId },
     include: {
@@ -77,49 +100,47 @@ const getProductRecipe = async (productId) => {
     }
   });
 
-  // Formateamos la respuesta para que se vea bonita como pide el requerimiento
+  // CORRECCIÓN: Devuelve camelCase
   return recipes.map(item => ({
-    ingredient_name: item.inventoryItem?.name || "Ingrediente desconocido",
+    ingredientName: item.inventoryItem?.name || "Ingrediente desconocido",
     qty: item.quantityRequired,
-    unit: item.inventoryItem?.measureUnit || "UNIDAD",
+    unit: item.inventoryItem?.unitMeasure || "UNIDAD", // Corregido: en Prisma es 'unitMeasure'
     scope: item.applyOn || "TODO"
   }));
 };
 
-// --- ENDPOINT 11: Verificar Disponibilidad (Check de Stock) ---
+// --- ENDPOINT 11: Verificar Disponibilidad (CORREGIDO A CAMELCASE) ---
 const checkProductAvailability = async (productId) => {
   const cleanId = productId.trim();
 
-  // 1. Verificar "Kill Switch" (Si el producto está desactivado manualmente)
+  // 1. Verificar "Kill Switch"
   const product = await prisma.kitchenProduct.findUnique({
     where: { id: cleanId },
-    include: { recipes: { include: { inventoryItem: true } } } // Traemos recetas e ingredientes de una vez
+    include: { recipes: { include: { inventoryItem: true } } }
   });
 
   if (!product) throw new Error("NOT_FOUND");
 
-  // Si isActive es false, está NO DISPONIBLE inmediatamente
+  // Si isActive es false, está NO DISPONIBLE
   if (!product.isActive) {
     return {
-      product_id: product.id,
+      productId: product.id,      // camelCase
       status: "UNAVAILABLE",
       reason: "Producto desactivado manualmente (Kill Switch)",
-      missing_items: []
+      missingItems: []            // camelCase
     };
   }
 
-  // 2. Verificar Stock de cada ingrediente
+  // 2. Verificar Stock
   const missingItems = [];
 
   for (const recipe of product.recipes) {
     const required = recipe.quantityRequired;
-    // OJO: Asumimos que inventoryItem tiene un campo 'currentStock'. 
-    // Si se llama 'quantity' o 'stock', cámbialo aquí.
     const currentStock = recipe.inventoryItem?.currentStock || 0; 
 
     if (currentStock < required) {
       missingItems.push(
-        `${recipe.inventoryItem?.name} (Faltan ${required - currentStock} ${recipe.inventoryItem?.measureUnit})`
+        `${recipe.inventoryItem?.name} (Faltan ${required - currentStock} ${recipe.inventoryItem?.unitMeasure})`
       );
     }
   }
@@ -127,18 +148,18 @@ const checkProductAvailability = async (productId) => {
   // 3. Resultado final
   if (missingItems.length > 0) {
     return {
-      product_id: product.id,
+      productId: product.id,
       status: "UNAVAILABLE",
       reason: "Stock insuficiente",
-      missing_items: missingItems
+      missingItems: missingItems
     };
   }
 
   return {
-    product_id: product.id,
+    productId: product.id,
     status: "AVAILABLE",
     reason: "OK",
-    missing_items: []
+    missingItems: []
   };
 };
 
