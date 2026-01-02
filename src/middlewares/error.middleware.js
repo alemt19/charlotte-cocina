@@ -1,5 +1,11 @@
 export const errorHandler = (err, req, res, next) => {
-    const status = Number(err?.status) || 500;
+    const isMulterError = err?.name === 'MulterError';
+    const isUploadValidation = typeof err?.message === 'string' && (
+        err.message.includes('Formato no válido') ||
+        err.message.toLowerCase().includes('file too large')
+    );
+
+    const status = Number(err?.status) || (isMulterError || isUploadValidation ? 400 : 500);
     const message = err?.message || 'Error interno del servidor';
 
     if (status >= 500) {

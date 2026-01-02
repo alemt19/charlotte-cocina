@@ -25,11 +25,7 @@ const getProductById = async (req, res, next) => {
     });
   } catch (error) {
     if (error.message === "NOT_FOUND") {
-      return res.status(404).json({ 
-        success: false, 
-        error: "NOT_FOUND", 
-        message: "El recurso solicitado no existe." 
-      });
+      return res.status(404).json({ success: false, error: "NOT_FOUND", message: "El recurso solicitado no existe." });
     }
     next(error); 
   }
@@ -37,7 +33,23 @@ const getProductById = async (req, res, next) => {
 
 const createProduct = async (req, res, next) => {
   try {
-    const newProduct = await productService.createProduct(req.body);
+    // Combinamos el body (texto) con el file (imagen)
+    const productData = { ...req.body };
+
+    const imageUrl = req.body.imageUrl || req.body.image_url;
+    if (!req.file && !imageUrl) {
+      return res.status(400).json({
+        success: false,
+        error: "VALIDATION_ERROR",
+        message: "La imagen es obligatoria. Sube un archivo en el campo 'image' o envía 'imageUrl'."
+      });
+    }
+
+    if (req.file) {
+      productData.imageFile = req.file; // Pasamos el archivo al servicio
+    }
+
+    const newProduct = await productService.createProduct(productData);
     res.status(201).json({ 
       success: true, 
       message: "Producto creado exitosamente", 
@@ -52,23 +64,33 @@ const updateProduct = async (req, res, next) => {
   try {
     const { id } = req.params;
     
-    const { name, description, base_price, category_id, image_url } = req.body;
+    // CORRECCIÓN: Ahora leemos camelCase (lo que espera el frontend moderno)
+    // Pero mantenemos soporte snake_case por si acaso.
+    const name = req.body.name;
+    const description = req.body.description;
+    const basePrice = req.body.basePrice || req.body.base_price;
+    const categoryId = req.body.categoryId || req.body.category_id;
+    const imageUrl = req.body.imageUrl || req.body.image_url;
 
-    if (base_price && typeof base_price !== 'number' && isNaN(parseFloat(base_price))) {
+    if (basePrice && typeof basePrice !== 'number' && isNaN(parseFloat(basePrice))) {
         return res.status(400).json({
             success: false,
             error: "VALIDATION_ERROR",
-            message: "El campo 'base_price' debe ser un número."
+            message: "El campo 'basePrice' debe ser un número."
         });
     }
 
     const dataToUpdate = {
       ...(name && { name }),
       ...(description && { description }),
-      ...(base_price !== undefined && { basePrice: parseFloat(base_price) }), 
-      ...(category_id && { categoryId: category_id }),
-      ...(image_url && { imageUrl: image_url })
+      ...(basePrice !== undefined && { basePrice: parseFloat(basePrice) }), 
+      ...(categoryId && { categoryId: categoryId }),
+      ...(imageUrl && { imageUrl: imageUrl })
     };
+
+    if (req.file) {
+      dataToUpdate.imageFile = req.file;
+    }
 
     const updatedProduct = await productService.updateProduct(id, dataToUpdate);
     
@@ -80,11 +102,7 @@ const updateProduct = async (req, res, next) => {
 
   } catch (error) {
     if (error.message === "NOT_FOUND") {
-      return res.status(404).json({ 
-        success: false, 
-        error: "NOT_FOUND", 
-        message: "El producto no existe para editar." 
-      });
+      return res.status(404).json({ success: false, error: "NOT_FOUND", message: "El producto no existe para editar." });
     }
     next(error);
   }
@@ -100,11 +118,7 @@ const deleteProduct = async (req, res, next) => {
     });
   } catch (error) {
     if (error.message === "NOT_FOUND") {
-      return res.status(404).json({ 
-        success: false, 
-        error: "NOT_FOUND", 
-        message: "El recurso solicitado no existe." 
-      });
+      return res.status(404).json({ success: false, error: "NOT_FOUND", message: "El recurso solicitado no existe." });
     }
     next(error);
   }
@@ -133,11 +147,7 @@ const toggleProductStatus = async (req, res, next) => {
 
   } catch (error) {
     if (error.message === "NOT_FOUND") {
-      return res.status(404).json({ 
-        success: false, 
-        error: "NOT_FOUND", 
-        message: "El producto no existe." 
-      });
+      return res.status(404).json({ success: false, error: "NOT_FOUND", message: "El producto no existe." });
     }
     next(error);
   }
