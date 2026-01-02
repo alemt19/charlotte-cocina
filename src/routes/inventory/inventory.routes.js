@@ -9,7 +9,7 @@ router.post('/items', requirePermission('InventoryItem_cocina', 'Create'), creat
 router.get('/items/:id', requirePermission('InventoryItem_cocina', 'Read'), getItem);
 router.get('/items/:id/logs', requirePermission('InventoryLog_cocina', 'Read'), getItemLogs);
 router.patch('/items/:id', requirePermission('InventoryItem_cocina', 'Update'), updateItem);
-router.post('/inbound', requirePermission('InventoryLog_cocina', 'Create'), registerInbound);
-router.post('/outbound', requirePermission('InventoryLog_cocina', 'Create'), registerOutbound);
+router.post('/inbound', registerInbound);
+router.post('/outbound', registerOutbound);
 
 export default router;
