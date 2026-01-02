@@ -34,8 +34,17 @@ const getProductById = async (req, res, next) => {
 const createProduct = async (req, res, next) => {
   try {
     // Combinamos el body (texto) con el file (imagen)
-    const productData = req.body;
-    
+    const productData = { ...req.body };
+
+    const imageUrl = req.body.imageUrl || req.body.image_url;
+    if (!req.file && !imageUrl) {
+      return res.status(400).json({
+        success: false,
+        error: "VALIDATION_ERROR",
+        message: "La imagen es obligatoria. Sube un archivo en el campo 'image' o envía 'imageUrl'."
+      });
+    }
+
     if (req.file) {
       productData.imageFile = req.file; // Pasamos el archivo al servicio
     }
@@ -78,6 +87,10 @@ const updateProduct = async (req, res, next) => {
       ...(categoryId && { categoryId: categoryId }),
       ...(imageUrl && { imageUrl: imageUrl })
     };
+
+    if (req.file) {
+      dataToUpdate.imageFile = req.file;
+    }
 
     const updatedProduct = await productService.updateProduct(id, dataToUpdate);
     

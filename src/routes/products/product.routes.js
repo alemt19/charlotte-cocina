@@ -27,6 +27,7 @@ router.get('/:id',
 // Actualizar producto (Update)
 router.patch('/:id', 
   requirePermission('KitchenProduct_cocina', 'Update'), 
+  upload.single('image'),
   productController.updateProduct
 );
 

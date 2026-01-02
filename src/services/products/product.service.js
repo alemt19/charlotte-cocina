@@ -31,9 +31,9 @@ const createProduct = async (data) => {
     const appUrl = process.env.APP_URL || 'http://localhost:3000';
     // Construimos la URL: http://localhost:3000/public/uploads/nombre-archivo.jpg
     finalImageUrl = `${appUrl}/public/uploads/${data.imageFile.filename}`;
-  } else if (data.imageUrl) {
+  } else if (data.imageUrl || data.image_url) {
     // Si mandaron una URL directa (string)
-    finalImageUrl = data.imageUrl;
+    finalImageUrl = data.imageUrl || data.image_url;
   }
 
   // Preparamos los datos para Prisma
@@ -55,9 +55,17 @@ const updateProduct = async (id, data) => {
   const exists = await prisma.kitchenProduct.findUnique({ where: { id: cleanId } });
   if (!exists) throw new Error("NOT_FOUND");
 
+  const updateData = { ...data };
+
+  if (updateData.imageFile) {
+    const appUrl = process.env.APP_URL || 'http://localhost:3000';
+    updateData.imageUrl = `${appUrl}/public/uploads/${updateData.imageFile.filename}`;
+    delete updateData.imageFile;
+  }
+
   return await prisma.kitchenProduct.update({
     where: { id: cleanId },
-    data: data
+    data: updateData
   });
 };
 

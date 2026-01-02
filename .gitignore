@@ -98,6 +98,10 @@ dist
 # Sveltekit cache directory
 .svelte-kit/
 
+# Uploads
+src/public/uploads/*
+!src/public/uploads/.gitkeep
+
 # vitepress build output
 **/.vitepress/dist
 
