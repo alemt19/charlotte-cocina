@@ -31,9 +31,9 @@ export const updateProductSchema = z.object({
 // 4. Esquema para CAMBIAR ESTADO (PATCH /status)
 export const toggleProductStatusSchema = z.object({
   body: z.object({
-    is_active: z.boolean({
-      required_error: "El campo is_active es obligatorio",
-      invalid_type_error: "is_active debe ser un booleano (true/false)"
+    isActive: z.boolean({
+      required_error: "El campo isActive es obligatorio",
+      invalid_type_error: "isActive debe ser un booleano (true/false)"
     })
   })
 });

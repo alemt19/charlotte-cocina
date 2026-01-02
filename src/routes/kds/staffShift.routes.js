@@ -7,7 +7,7 @@ import {
 const router = express.Router();
 
 // Endpoint 10: Registrar entrada/salida de turno
-router.post('/staff/:staff_id/shift', registerShiftController);
+router.post('/staff/:staffId/shift', registerShiftController);
 
 // Endpoint 12: Obtener historial de turnos
 router.get('/staff/:id/shifts', getShiftHistoryController);

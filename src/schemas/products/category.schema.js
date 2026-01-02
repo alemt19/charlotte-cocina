@@ -20,8 +20,8 @@ const updateCategorySchema = z.object({
     invalid_type_error: "El nombre debe ser un texto"
   }).min(3, "El nombre debe tener al menos 3 caracteres").optional(),
   
-  is_active: z.boolean({
-    invalid_type_error: "is_active debe ser true o false"
+  isActive: z.boolean({
+    invalid_type_error: "isActive debe ser true o false"
   }).optional()
 }).strict(); // .strict() rechaza campos raros que no esperemos
 
