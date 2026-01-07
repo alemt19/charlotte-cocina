@@ -7,7 +7,6 @@ const router = Router();
 
 // Listar productos (Read)
 router.get('/', 
-  requirePermission('KitchenProduct_cocina', 'Read'), 
   productController.getProducts
 );
 
@@ -20,7 +19,6 @@ router.post('/',
 
 // Obtener por ID (Read)
 router.get('/:id', 
-  requirePermission('KitchenProduct_cocina', 'Read'), 
   productController.getProductById
 );
 
@@ -53,7 +51,6 @@ router.get('/:id/recipe',
 
 // Endpoint 11: Disponibilidad
 router.get('/:id/availability', 
-  requirePermission('KitchenProduct_cocina', 'Read'), 
   productController.checkAvailability
 );
 

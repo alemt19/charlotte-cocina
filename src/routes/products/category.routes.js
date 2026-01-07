@@ -8,7 +8,6 @@ const router = Router();
 
 // 1. Obtener categorías (Read)
 router.get('/', 
-  requirePermission('KitchenCategory_cocina', 'Read'), 
   categoryController.getCategories
 );
 
