@@ -1,3 +1,4 @@
+import { envs } from '../../config/envs.js';
 import { prisma } from '../../db/client.js';
 
 const getProducts = async () => {
@@ -28,7 +29,7 @@ const createProduct = async (data) => {
   // Si recibimos un archivo desde el controlador
   if (data.imageFile) {
     // Detectamos si estamos en local o prod
-    const appUrl = process.env.APP_URL || 'http://localhost:3000';
+    const appUrl = envs.API_URL || 'http://localhost:3000';
     // Construimos la URL: http://localhost:3000/public/uploads/nombre-archivo.jpg
     finalImageUrl = `${appUrl}/public/uploads/${data.imageFile.filename}`;
   } else if (data.imageUrl || data.image_url) {
@@ -58,7 +59,7 @@ const updateProduct = async (id, data) => {
   const updateData = { ...data };
 
   if (updateData.imageFile) {
-    const appUrl = process.env.APP_URL || 'http://localhost:3000';
+    const appUrl = envs.API_URL || 'http://localhost:3000';
     updateData.imageUrl = `${appUrl}/public/uploads/${updateData.imageFile.filename}`;
     delete updateData.imageFile;
   }
