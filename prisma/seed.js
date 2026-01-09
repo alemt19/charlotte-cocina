@@ -145,7 +145,6 @@ async function main() {
     { userId: randomUUID(), workerCode: 'CHEF01', role: 'HEAD_CHEF', isActive: true },
     { userId: randomUUID(), workerCode: 'COOK01', role: 'CHEF', isActive: true },
     { userId: randomUUID(), workerCode: 'WAIT01', role: 'WAITER', isActive: true },
-    { userId: randomUUID(), workerCode: 'RUNN01', role: 'RUNNER', isActive: true },
   ];
 
   const staffMembers = {};
