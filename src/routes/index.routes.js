@@ -10,17 +10,14 @@ import recipeRoutes from './products/recipe.routes.js';
 
 const router = Router();
 
-// Rutas de KDS y Personal de Cocina
 router.use('/', kitchenStaffRoutes);
 router.use('/', staffShiftRoutes);
 router.use('/', kdsRoutes);
 
-// Rutas de Inventario y Activos
 router.use('/inventory', inventoryRoutes);
 router.use('/assets', assetsRoutes);
 
-// Rutas de Productos
-router.use('/categories', categoryRoutes)
+router.use('/categories', categoryRoutes);
 router.use('/products', productRoutes);
 router.use('/recipes', recipeRoutes);
 

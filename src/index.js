@@ -22,7 +22,7 @@ app.use(bodyParser.json());
 
 // --- CONFIGURACIÓN DE IMÁGENES PÚBLICAS ---
 // Esto permite acceder a http://localhost:3000/public/uploads/foto.jpg
-app.use('/public', express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, '../public')));
 // ------------------------------------------
 
 app.use(morgan('dev'));

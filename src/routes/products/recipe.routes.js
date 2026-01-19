@@ -4,9 +4,8 @@ import { requirePermission } from '../../middlewares/security/permission.middlew
 
 const router = Router();
 
-// Crear Receta (Create)
 router.post('/', 
-  requirePermission('Recipe_cocina', 'Create'), 
+  requirePermission('KitchenProduct_cocina', 'Create'), 
   recipeController.createRecipe
 );
 

@@ -1,9 +1,23 @@
 import { prisma } from '../../db/client.js';
 
-const getProducts = async () => {
+const getProducts = async ({ activeOnly, categoryId } = {}) => {
+  const where = {};
+  
+  if (activeOnly) {
+    where.isActive = true;
+  }
+  
+  if (categoryId) {
+    where.categoryId = categoryId;
+  }
+
   return await prisma.kitchenProduct.findMany({
+    where,
     include: {
-      category: true 
+      category: true
+    },
+    orderBy: {
+      name: 'asc'
     }
   });
 };
@@ -13,7 +27,12 @@ const getProductById = async (id) => {
   const product = await prisma.kitchenProduct.findUnique({
     where: { id: cleanId },
     include: {
-      recipes: true 
+      category: true,
+      recipes: {
+        include: {
+          inventoryItem: true 
+        }
+      }
     }
   });
   
@@ -21,99 +40,64 @@ const getProductById = async (id) => {
   return product;
 };
 
-// --- MODIFICADO PARA MANEJAR IMÁGENES ---
 const createProduct = async (data) => {
   let finalImageUrl = null;
 
-  // Si recibimos un archivo desde el controlador
   if (data.imageFile) {
-    // Detectamos si estamos en local o prod
     const appUrl = process.env.APP_URL || 'http://localhost:3000';
-    // Construimos la URL: http://localhost:3000/public/uploads/nombre-archivo.jpg
     finalImageUrl = `${appUrl}/public/uploads/${data.imageFile.filename}`;
   } else if (data.imageUrl) {
-    // Si mandaron una URL directa (string)
     finalImageUrl = data.imageUrl;
   }
 
-  // Preparamos los datos para Prisma
-  // Convertimos inputs a los nombres de la DB
   const prismaData = {
     name: data.name,
     description: data.description,
-    basePrice: parseFloat(data.basePrice || data.base_price), // Soporta ambos
-    categoryId: data.categoryId || data.category_id,
-    imageUrl: finalImageUrl // <--- Guardamos la URL generada
+    basePrice: data.basePrice,
+    imageUrl: finalImageUrl,
+    isActive: data.isActive !== undefined ? data.isActive : true,
+    category: {
+      connect: { id: data.categoryId }
+    }
   };
 
-  return await prisma.kitchenProduct.create({ data: prismaData });
+  return await prisma.kitchenProduct.create({
+    data: prismaData
+  });
 };
 
 const updateProduct = async (id, data) => {
-  const cleanId = id.trim();
-
-  const exists = await prisma.kitchenProduct.findUnique({ where: { id: cleanId } });
-  if (!exists) throw new Error("NOT_FOUND");
-
   return await prisma.kitchenProduct.update({
-    where: { id: cleanId },
-    data: data
+    where: { id },
+    data
   });
 };
 
 const deleteProduct = async (id) => {
-  const cleanId = id.trim();
-  const exists = await prisma.kitchenProduct.findUnique({ where: { id: cleanId } });
-  if (!exists) throw new Error("NOT_FOUND");
-
   return await prisma.kitchenProduct.delete({
-    where: { id: cleanId }
+    where: { id }
   });
 };
 
-const toggleProductStatus = async (id, isActiveValue) => {
-  const cleanId = id.trim();
-  const productExists = await prisma.kitchenProduct.findUnique({
-    where: { id: cleanId }
-  });
-
-  if (!productExists) {
-    throw new Error("NOT_FOUND");
-  }
-
+const toggleProductStatus = async (id, isActive) => {
   return await prisma.kitchenProduct.update({
-    where: { id: cleanId },
-    data: {
-      isActive: isActiveValue
-    }
+    where: { id },
+    data: { isActive },
+    select: { id: true, name: true, isActive: true }
   });
 };
 
-// --- ENDPOINT 10: Ver Receta del Producto (CORREGIDO A CAMELCASE) ---
-const getProductRecipe = async (productId) => {
-  const cleanId = productId.trim();
-  
-  const recipes = await prisma.recipe.findMany({
+const getProductRecipe = async (id) => {
+  const cleanId = id.trim();
+  return await prisma.recipe.findMany({
     where: { productId: cleanId },
-    include: {
-      inventoryItem: true 
-    }
+    include: { inventoryItem: true }
   });
-
-  // CORRECCIÓN: Devuelve camelCase
-  return recipes.map(item => ({
-    ingredientName: item.inventoryItem?.name || "Ingrediente desconocido",
-    qty: item.quantityRequired,
-    unit: item.inventoryItem?.unitMeasure || "UNIDAD", // Corregido: en Prisma es 'unitMeasure'
-    scope: item.applyOn || "TODO"
-  }));
 };
 
-// --- ENDPOINT 11: Verificar Disponibilidad (CORREGIDO A CAMELCASE) ---
-const checkProductAvailability = async (productId) => {
-  const cleanId = productId.trim();
+const checkProductAvailability = async (id) => {
+  const cleanId = id.trim();
 
-  // 1. Verificar "Kill Switch"
   const product = await prisma.kitchenProduct.findUnique({
     where: { id: cleanId },
     include: { recipes: { include: { inventoryItem: true } } }
@@ -121,17 +105,15 @@ const checkProductAvailability = async (productId) => {
 
   if (!product) throw new Error("NOT_FOUND");
 
-  // Si isActive es false, está NO DISPONIBLE
   if (!product.isActive) {
     return {
-      productId: product.id,      // camelCase
+      productId: product.id,
       status: "UNAVAILABLE",
-      reason: "Producto desactivado manualmente (Kill Switch)",
-      missingItems: []            // camelCase
+      reason: "Producto desactivado manualmente",
+      missingItems: []
     };
   }
 
-  // 2. Verificar Stock
   const missingItems = [];
 
   for (const recipe of product.recipes) {
@@ -145,7 +127,6 @@ const checkProductAvailability = async (productId) => {
     }
   }
 
-  // 3. Resultado final
   if (missingItems.length > 0) {
     return {
       productId: product.id,
@@ -159,6 +140,7 @@ const checkProductAvailability = async (productId) => {
     productId: product.id,
     status: "AVAILABLE",
     reason: "OK",
+    stockAlert: null,
     missingItems: []
   };
 };
@@ -170,6 +152,6 @@ export default {
   updateProduct,
   deleteProduct,
   toggleProductStatus,
-  getProductRecipe,        
+  getProductRecipe,
   checkProductAvailability
 };

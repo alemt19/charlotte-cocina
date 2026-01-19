@@ -1,8 +1,13 @@
 import productService from '../../services/products/product.service.js';
+import { createProductSchema, updateProductSchema } from '../../schemas/products/product.schema.js';
 
 const getProducts = async (req, res, next) => {
   try {
-    const products = await productService.getProducts();
+    const activeOnly = req.query.activeOnly === 'true';
+    const categoryId = req.query.categoryId;
+
+    const products = await productService.getProducts({ activeOnly, categoryId });
+    
     res.status(200).json({ 
       success: true, 
       message: "Lista de productos obtenida correctamente",
@@ -33,18 +38,31 @@ const getProductById = async (req, res, next) => {
 
 const createProduct = async (req, res, next) => {
   try {
-    // Combinamos el body (texto) con el file (imagen)
-    const productData = req.body;
+    const productData = { ...req.body };
     
+    if (productData.basePrice) productData.basePrice = parseFloat(productData.basePrice);
+    if (productData.isActive) productData.isActive = productData.isActive === 'true';
+
+    const validation = createProductSchema.shape.body.safeParse(productData);
+    
+    if (!validation.success) {
+      return res.status(400).json({
+        success: false,
+        error: "VALIDATION_ERROR",
+        message: validation.error.errors[0].message
+      });
+    }
+
     if (req.file) {
-      productData.imageFile = req.file; // Pasamos el archivo al servicio
+      productData.imageFile = req.file;
     }
 
     const newProduct = await productService.createProduct(productData);
-    res.status(201).json({ 
-      success: true, 
-      message: "Producto creado exitosamente", 
-      data: newProduct 
+
+    res.status(201).json({
+      success: true,
+      message: "Producto creado exitosamente",
+      data: newProduct
     });
   } catch (error) {
     next(error);
@@ -54,43 +72,24 @@ const createProduct = async (req, res, next) => {
 const updateProduct = async (req, res, next) => {
   try {
     const { id } = req.params;
+    const validation = updateProductSchema.shape.body.safeParse(req.body);
     
-    // CORRECCIÓN: Ahora leemos camelCase (lo que espera el frontend moderno)
-    // Pero mantenemos soporte snake_case por si acaso.
-    const name = req.body.name;
-    const description = req.body.description;
-    const basePrice = req.body.basePrice || req.body.base_price;
-    const categoryId = req.body.categoryId || req.body.category_id;
-    const imageUrl = req.body.imageUrl || req.body.image_url;
-
-    if (basePrice && typeof basePrice !== 'number' && isNaN(parseFloat(basePrice))) {
-        return res.status(400).json({
-            success: false,
-            error: "VALIDATION_ERROR",
-            message: "El campo 'basePrice' debe ser un número."
-        });
+    if (!validation.success) {
+      return res.status(400).json({
+        success: false,
+        error: "VALIDATION_ERROR",
+        message: validation.error.errors[0].message
+      });
     }
 
-    const dataToUpdate = {
-      ...(name && { name }),
-      ...(description && { description }),
-      ...(basePrice !== undefined && { basePrice: parseFloat(basePrice) }), 
-      ...(categoryId && { categoryId: categoryId }),
-      ...(imageUrl && { imageUrl: imageUrl })
-    };
-
-    const updatedProduct = await productService.updateProduct(id, dataToUpdate);
+    const updatedProduct = await productService.updateProduct(id, req.body);
     
-    res.status(200).json({ 
-      success: true, 
-      message: "Producto actualizado correctamente", 
-      data: updatedProduct 
+    res.status(200).json({
+      success: true,
+      message: "Producto actualizado",
+      data: updatedProduct
     });
-
   } catch (error) {
-    if (error.message === "NOT_FOUND") {
-      return res.status(404).json({ success: false, error: "NOT_FOUND", message: "El producto no existe para editar." });
-    }
     next(error);
   }
 };
@@ -99,14 +98,8 @@ const deleteProduct = async (req, res, next) => {
   try {
     const { id } = req.params;
     await productService.deleteProduct(id);
-    res.status(200).json({ 
-      success: true, 
-      message: "Producto eliminado correctamente" 
-    });
+    res.status(204).send();
   } catch (error) {
-    if (error.message === "NOT_FOUND") {
-      return res.status(404).json({ success: false, error: "NOT_FOUND", message: "El recurso solicitado no existe." });
-    }
     next(error);
   }
 };
@@ -114,13 +107,13 @@ const deleteProduct = async (req, res, next) => {
 const toggleProductStatus = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { isActive } = req.body; 
+    const { isActive } = req.body;
 
-    if (typeof isActive !== 'boolean') {
+    if (isActive === undefined || typeof isActive !== 'boolean') {
       return res.status(400).json({
         success: false,
         error: "VALIDATION_ERROR",
-        message: "Falta el campo 'isActive' (true/false) o no es booleano."
+        message: "Falta el campo 'isActive' (boolean)."
       });
     }
 
@@ -140,28 +133,23 @@ const toggleProductStatus = async (req, res, next) => {
   }
 };
 
-// Endpoint 10
-const getProductRecipe = async (req, res) => {
+const getProductRecipe = async (req, res, next) => {
   try {
     const { id } = req.params;
     const recipe = await productService.getProductRecipe(id);
     res.json(recipe);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    next(error);
   }
 };
 
-// Endpoint 11
-const checkAvailability = async (req, res) => {
+const checkAvailability = async (req, res, next) => {
   try {
     const { id } = req.params;
     const result = await productService.checkProductAvailability(id);
     res.json(result);
   } catch (error) {
-    if (error.message === "NOT_FOUND") {
-      return res.status(404).json({ error: "Producto no encontrado" });
-    }
-    res.status(500).json({ error: error.message });
+    next(error);
   }
 };
 
@@ -172,6 +160,6 @@ export default {
   updateProduct,
   deleteProduct,
   toggleProductStatus,
-  getProductRecipe,   
+  getProductRecipe,
   checkAvailability
 };
