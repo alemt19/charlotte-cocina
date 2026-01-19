@@ -11,7 +11,12 @@ router.get('/:id', productController.getProductById);
 
 router.post('/', upload.single('image'), productController.createProduct);
 
-router.patch('/:id', productController.updateProduct);
+// Actualizar producto (Update)
+router.patch('/:id', 
+  requirePermission('KitchenProduct_cocina', 'Update'), 
+  upload.single('image'),
+  productController.updateProduct
+);
 
 router.delete('/:id', productController.deleteProduct);
 

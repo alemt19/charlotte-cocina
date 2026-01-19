@@ -81,7 +81,7 @@ enum KdsStatus {
 enum StaffRole {
   CHEF
   WAITER
-  RUNNER
+  HEAD_WAITER
   HEAD_CHEF
 }
 

@@ -38,18 +38,15 @@ const getProductById = async (req, res, next) => {
 
 const createProduct = async (req, res, next) => {
   try {
+    // Combinamos el body (texto) con el file (imagen)
     const productData = { ...req.body };
-    
-    if (productData.basePrice) productData.basePrice = parseFloat(productData.basePrice);
-    if (productData.isActive) productData.isActive = productData.isActive === 'true';
 
-    const validation = createProductSchema.shape.body.safeParse(productData);
-    
-    if (!validation.success) {
+    const imageUrl = req.body.imageUrl || req.body.image_url;
+    if (!req.file && !imageUrl) {
       return res.status(400).json({
         success: false,
         error: "VALIDATION_ERROR",
-        message: validation.error.errors[0].message
+        message: "La imagen es obligatoria. Sube un archivo en el campo 'image' o envía 'imageUrl'."
       });
     }
 
@@ -82,7 +79,19 @@ const updateProduct = async (req, res, next) => {
       });
     }
 
-    const updatedProduct = await productService.updateProduct(id, req.body);
+    const dataToUpdate = {
+      ...(name && { name }),
+      ...(description && { description }),
+      ...(basePrice !== undefined && { basePrice: parseFloat(basePrice) }), 
+      ...(categoryId && { categoryId: categoryId }),
+      ...(imageUrl && { imageUrl: imageUrl })
+    };
+
+    if (req.file) {
+      dataToUpdate.imageFile = req.file;
+    }
+
+    const updatedProduct = await productService.updateProduct(id, dataToUpdate);
     
     res.status(200).json({
       success: true,
