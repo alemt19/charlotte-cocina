@@ -38,7 +38,6 @@ const getProductById = async (req, res, next) => {
 
 const createProduct = async (req, res, next) => {
   try {
-    // Combinamos el body (texto) con el file (imagen)
     const productData = { ...req.body };
 
     const imageUrl = req.body.imageUrl || req.body.image_url;
@@ -78,6 +77,8 @@ const updateProduct = async (req, res, next) => {
         message: validation.error.errors[0].message
       });
     }
+
+    const { name, description, basePrice, categoryId, imageUrl } = req.body;
 
     const dataToUpdate = {
       ...(name && { name }),
