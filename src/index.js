@@ -4,42 +4,32 @@ import { envs } from './config/envs.js';
 import exampleRoutes from './routes/example/example.routes.js';
 import morgan from 'morgan';
 import cors from 'cors';
-import path from 'path'; // <--- Nuevo import
-import { fileURLToPath } from 'url'; // <--- Nuevo import
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { errorHandler } from './middlewares/error.middleware.js';
 import { prisma } from './db/client.js';
 import router from './routes/index.routes.js';
 
-// Configuración de rutas para archivos estáticos
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
 const BASE_PATH = '/api/kitchen';
 
-// Middlewares globales
 app.use(bodyParser.json());
-
-// --- CONFIGURACIÓN DE IMÁGENES PÚBLICAS ---
-// Esto permite acceder a http://localhost:3000/public/uploads/foto.jpg
 app.use(express.static(path.join(__dirname, '../public')));
-// ------------------------------------------
-
 app.use(morgan('dev'));
-app.use(cors({ origin: envs.ALLOWED_ORIGINS || '*' }));
+app.use(cors());
 
-// Rutas
 app.use('/api/example', exampleRoutes);
 app.use(`${BASE_PATH}`, router);
 
 app.use(errorHandler);
 
-// Iniciar servidor
 const server = app.listen(envs.PORT, () =>
   console.log(`🚀 Server ready at: http://localhost:${envs.PORT}`)
 );
 
-// Graceful Shutdown
 const gracefulShutdown = async () => {
   console.log('\nCerrando servidor y desconectando base de datos...');
   await prisma.$disconnect();
