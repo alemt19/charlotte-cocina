@@ -4,12 +4,10 @@ import { getAll, getById, create, update, remove, getActiveKitchenStaffControlle
 const router = Router();
 
 router.get('/staff', getAll);
+router.get('/staff/active', getActiveKitchenStaffController);
 router.get('/staff/:id', getById);
 router.post('/staff', create);
 router.patch('/staff/:id', update);
 router.delete('/staff/:id', remove);
-
-// Endpoint 9: Listar personal activo
-router.get('/staff/active', getActiveKitchenStaffController);
 
 export default router;
