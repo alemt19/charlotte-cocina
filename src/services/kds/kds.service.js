@@ -1,7 +1,137 @@
+import { envs } from '../../config/envs.js';
 import { prisma } from '../../db/client.js';
 import axios from 'axios';
 
-const injectOrder = async (orderData) => {
+const normalizeAuthorizationHeader = (authorization) => {
+    if (!authorization || typeof authorization !== 'string') return null;
+    const trimmed = authorization.trim();
+    if (!trimmed) return null;
+
+    if (/^bearer\s+/i.test(trimmed)) return trimmed;
+    return `Bearer ${trimmed}`;
+};
+
+const axiosAuthConfig = (authorization) => {
+    const header = normalizeAuthorizationHeader(authorization);
+    if (!header) return {};
+    return { headers: { Authorization: header } };
+};
+
+const getInventoryCostAtTime = async (itemId) => {
+    const item = await prisma.inventoryItem.findUnique({
+        where: { id: itemId },
+        select: { averageCost: true },
+    });
+
+    return Number(item?.averageCost ?? 0);
+};
+
+const rollbackInventoryForTask = async (task, authorization) => {
+    if (!task) return;
+
+    const recipeRows = await prisma.recipe.findMany({
+        where: { productId: task.productId },
+        select: {
+            inventoryItemId: true,
+            quantityRequired: true,
+            applyOn: true,
+        },
+    });
+
+    if (!recipeRows.length) return;
+
+    for (const r of recipeRows) {
+        if (r.applyOn !== 'ALL' && r.applyOn !== task.serviceMode) continue;
+
+        const costAtTime = await getInventoryCostAtTime(r.inventoryItemId);
+
+        await axios.post(`${envs.API_URL}/api/kitchen/inventory/inbound`, {
+            itemId: r.inventoryItemId,
+            quantityChange: Number(r.quantityRequired) * Number(task.quantity),
+            costAtTime,
+            movementType: 'RETURN_RESTOCK',
+            reason: `Rollback por rechazo/cancelación - orden ${task.externalOrderId} - producto ${task.productId}`,
+        }, axiosAuthConfig(authorization));
+    }
+};
+
+const mapKdsStatusToAtencionClienteStatus = (kdsStatus) => {
+    switch (kdsStatus) {
+        case 'PENDING':
+            return 'PENDING';
+        case 'COOKING':
+            return 'COOKING';
+        case 'READY':
+        case 'SERVED':
+            return 'DELIVERED';
+        case 'REJECTED':
+            return 'CANCELLED';
+        default:
+            return null;
+    }
+};
+
+const mapKdsStatusToDeliveryPickupStatus = (kdsStatus) => {
+    switch (kdsStatus) {
+        case 'COOKING':
+            return 'IN_KITCHEN';
+        case 'READY':
+            return 'READY_FOR_DISPATCH';
+        case 'REJECTED':
+            return 'CANCELLED';
+        default:
+            return null;
+    }
+};
+
+const notifyExternalModuleOrderStatus = async ({ sourceModule, externalOrderId, kdsStatus, authorization }) => {
+    try {
+        if (!sourceModule || !externalOrderId || !kdsStatus) return;
+
+        if (sourceModule === 'AC_MODULE') {
+            const status = mapKdsStatusToAtencionClienteStatus(kdsStatus);
+            if (!status) return;
+
+            await axios.patch(
+                `${envs.ATENCION_CLIENTE_API_URL}/api/v1/atencion-cliente/comandas/${externalOrderId}`,
+                { status },
+                axiosAuthConfig(authorization)
+            );
+            return;
+        }
+
+        if (sourceModule === 'DP_MODULE') {
+            const status = mapKdsStatusToDeliveryPickupStatus(kdsStatus);
+            if (!status) return;
+
+            await axios.patch(
+                `${envs.DELIVERY_PICKUP_API_URL}/api/dp/v1/orders/${externalOrderId}/status`,
+                { status },
+                axiosAuthConfig(authorization)
+            );
+        }
+    } catch (error) {
+        const errMsg = error.response?.data?.message || error.response?.data?.error || error.message;
+        console.error(`Error notificando módulo externo (${sourceModule}) para orden ${externalOrderId}: ${errMsg}`);
+    }
+};
+
+const notifyIfOrderFullyInStatus = async ({ externalOrderId, sourceModule, targetStatus, authorization }) => {
+    if (!externalOrderId || !sourceModule || !targetStatus) return;
+
+    const tasks = await prisma.kdsProductionQueue.findMany({
+        where: { externalOrderId },
+        select: { status: true },
+    });
+
+    if (!tasks.length) return;
+    const allInTarget = tasks.every((t) => t.status === targetStatus);
+    if (!allInTarget) return;
+
+    await notifyExternalModuleOrderStatus({ sourceModule, externalOrderId, kdsStatus: targetStatus, authorization });
+};
+
+const injectOrder = async (orderData, authorization) => {
     const {
         externalOrderId,
         sourceModule,
@@ -10,6 +140,26 @@ const injectOrder = async (orderData) => {
         customerName,
         items,
     } = orderData;
+
+    for (const item of items) {
+        try {
+            const { data } = await axios.get(`${envs.API_URL}/api/kitchen/products/${item.productId}/availability`);
+            
+            if (data.status === 'UNAVAILABLE') {
+                const missingItems = data.missingItems || data.missing_items;
+                const missing = missingItems && missingItems.length > 0 
+                    ? `: ${missingItems.join(', ')}` 
+                    : '';
+                throw new Error(`El producto ${item.productId} no está disponible. Razón: ${data.reason}${missing}`);
+            }
+        } catch (error) {
+            if (error.message && error.message.includes('no está disponible')) {
+                throw error;
+            }
+            const errorMsg = error.response?.data?.message || error.response?.data?.error || error.message;
+            throw new Error(`Error verificando disponibilidad del producto ${item.productId}: ${errorMsg}`);
+        }
+    }
 
     return await prisma.$transaction(async (tx) => {
         const productIds = items.map(item => item.productId);
@@ -43,7 +193,6 @@ const injectOrder = async (orderData) => {
             },
             include: { inventoryItem: true },
         });
-
         let deductedCount = 0;
 
         for (const r of recipe) {
@@ -52,16 +201,17 @@ const injectOrder = async (orderData) => {
             }
 
             try {
-                // await axios.post('http://localhost:3000/api/kitchen/inventory/outbound', {
-                //     itemId: r.inventoryItemId,
-                //     quantity: r.quantityRequired * item.quantity,
-                //     reason: 'ORDER_INJECTION',
-                //     sourceModule,
-                // });
-                console.log(`Descontando ${r.quantityRequired * item.quantity} del item ${r.inventoryItem.name}`);
+                await axios.post(`${envs.API_URL}/api/kitchen/inventory/outbound`, {
+                    itemId: r.inventoryItemId,
+                    quantityChange: r.quantityRequired * item.quantity,
+                    movementType: 'SALE',
+                    reason: `Descuento por orden ${externalOrderId} - producto ${item.productId}`,
+                }, axiosAuthConfig(authorization));
                 deductedCount++;
             } catch (error) {
-                throw new Error(`Fallo al descontar inventario del item ${r.inventoryItemId}`);
+                console.error('Error descontando inventario:', error.response?.data || error.message);
+                const reason = error.response?.data?.message || error.response?.data?.error || error.message;
+                throw new Error(`Fallo al descontar inventario del item ${r.inventoryItemId}: ${reason}`);
             }
         }
 
@@ -86,16 +236,6 @@ const getQueueTasks = async (status) => {
                 { priorityLevel: 'asc' },
                 { createdAt: 'asc' },
         ],
-        select: {
-            id: true,
-            externalOrderId: true,
-            productId: true,
-            quantity: true,
-            preparationNotes: true,
-            status: true,
-            priorityLevel: true,
-            createdAt: true,
-        },
     });
 
         const productIds = [...new Set(tasks.map(t => t.productId))];
@@ -138,7 +278,7 @@ const assignTask = async (taskId, staffId, role) => {
     }
 };
 
-const updateTaskStatus = async (taskId, newStatus) => {
+const updateTaskStatus = async (taskId, newStatus, authorization) => {
     try {
         const task = await prisma.kdsProductionQueue.findUnique({ where: { id: taskId } });
         if (!task) throw new Error('La tarea no existe.');
@@ -161,22 +301,14 @@ const updateTaskStatus = async (taskId, newStatus) => {
         data: updateData,
     });
 
-        if (newStatus === 'READY') {
-        const allTasks = await prisma.kdsProductionQueue.findMany({
-        where: { externalOrderId: updatedTask.externalOrderId },
+        // Notificamos SOLO cuando el estado de la ORDEN completa cambió (todas las tareas con el mismo externalOrderId)
+        // quedaron en el mismo estado.
+        await notifyIfOrderFullyInStatus({
+            externalOrderId: updatedTask.externalOrderId,
+            sourceModule: updatedTask.sourceModule,
+            targetStatus: newStatus,
+            authorization,
         });
-        const allReady = allTasks.every(t => t.status === 'READY');
-        if (allReady) {
-            try {
-                await axios.post(`http://localhost:3000/api/notify/${updatedTask.sourceModule}`, {
-                    orderId: updatedTask.externalOrderId,
-                    status: 'READY',
-            });
-            } catch (error) {
-            console.error('Error enviando notificación externa:', error);
-            }
-        }
-    }
 
         return updatedTask;
     } catch (error) {
@@ -185,45 +317,100 @@ const updateTaskStatus = async (taskId, newStatus) => {
     }
 };
 
-export const markTaskServed = async (taskId, staffId) => {
+export const markTaskServed = async (taskId, staffId, authorization) => {
     const task = await prisma.kdsProductionQueue.findUnique({ where: { id: taskId } });
         if (!task) throw new Error('Tarea no encontrada');
             if (!['DINE_IN', 'TAKEOUT'].includes(task.serviceMode)) {
                 throw new Error('Modo de servicio incompatible');
     }
 
-        return await prisma.kdsProductionQueue.update({
+        const updated = await prisma.kdsProductionQueue.update({
             where: { id: taskId },
             data: { status: 'SERVED', assignedWaiterId: staffId },
     });
+
+        await notifyIfOrderFullyInStatus({
+            externalOrderId: updated.externalOrderId,
+            sourceModule: updated.sourceModule,
+            targetStatus: 'SERVED',
+            authorization,
+        });
+
+        return updated;
 };
 
-export const rejectTask = async (taskId) => {
+export const rejectTask = async (taskId, authorization) => {
         const task = await prisma.kdsProductionQueue.findUnique({ where: { id: taskId } });
             if (!task) throw new Error('Tarea no encontrada');
                 if (task.status === 'SERVED') throw new Error('No se puede anular una tarea servida');
 
-        return await prisma.$transaction(async (tx) => {
-            const updated = await tx.kdsProductionQueue.update({
+        // Evita rollback doble si ya está rechazada.
+        if (task.status === 'REJECTED') return task;
+
+        // Primero hacemos rollback del inventario; si falla, no cambiamos el estado.
+        await rollbackInventoryForTask(task, authorization);
+
+        const updated = await prisma.kdsProductionQueue.update({
             where: { id: taskId },
             data: { status: 'REJECTED' },
-    });
+        });
 
-    // Rollback inventario (ejemplo)
-    // await axios.post('/api/kitchen/inventory/inbound', { ... });
+        await notifyIfOrderFullyInStatus({
+            externalOrderId: updated.externalOrderId,
+            sourceModule: updated.sourceModule,
+            targetStatus: 'REJECTED',
+            authorization,
+        });
 
-    // Notificación externa (ejemplo)
-    // await axios.post(`/api/notify/${task.sourceModule}`, { orderId: task.externalOrderId, status: 'REJECTED' });
-
-    return updated;
-    });
+        return updated;
 };
 
-export const cancelExternalOrder = async (externalId) => {
+export const cancelExternalOrder = async (externalId, authorization) => {
     const tasks = await prisma.kdsProductionQueue.findMany({ where: { externalOrderId: externalId } });
     if (!tasks.length) throw new Error('No hay tareas para esa orden');
 
-    return await prisma.$transaction(async (tx) => {
+    // Rollback inventario para todas las tareas que aún no estén REJECTED.
+    const tasksToRollback = tasks.filter((t) => t.status !== 'REJECTED');
+
+    if (tasksToRollback.length) {
+        const productIds = [...new Set(tasksToRollback.map((t) => t.productId))];
+        const recipes = await prisma.recipe.findMany({
+            where: { productId: { in: productIds } },
+            select: {
+                productId: true,
+                inventoryItemId: true,
+                quantityRequired: true,
+                applyOn: true,
+            },
+        });
+
+        const recipesByProductId = recipes.reduce((acc, r) => {
+            acc[r.productId] = acc[r.productId] || [];
+            acc[r.productId].push(r);
+            return acc;
+        }, {});
+
+        for (const task of tasksToRollback) {
+            const recipeRows = recipesByProductId[task.productId] || [];
+            if (!recipeRows.length) continue;
+
+            for (const r of recipeRows) {
+                if (r.applyOn !== 'ALL' && r.applyOn !== task.serviceMode) continue;
+
+                const costAtTime = await getInventoryCostAtTime(r.inventoryItemId);
+
+                await axios.post(`${envs.API_URL}/api/kitchen/inventory/inbound`, {
+                    itemId: r.inventoryItemId,
+                    quantityChange: Number(r.quantityRequired) * Number(task.quantity),
+                    costAtTime,
+                    movementType: 'RETURN_RESTOCK',
+                    reason: `Rollback por cancelación - orden ${task.externalOrderId} - producto ${task.productId}`,
+                }, axiosAuthConfig(authorization));
+            }
+        }
+    }
+
+    const cancelled = await prisma.$transaction(async (tx) => {
         const cancelled = [];
     for (const task of tasks) {
         const updated = await tx.kdsProductionQueue.update({
@@ -234,6 +421,16 @@ export const cancelExternalOrder = async (externalId) => {
     }
     return cancelled;
     });
+
+    // Para cancelación, ya garantizamos que toda la orden quedó REJECTED.
+    await notifyExternalModuleOrderStatus({
+        sourceModule: tasks[0].sourceModule,
+        externalOrderId: externalId,
+        kdsStatus: 'REJECTED',
+        authorization,
+    });
+
+    return cancelled;
 };
 
 export const getTaskHistory = async (filters) => {

@@ -4,7 +4,9 @@ import { requirePermission } from '../../middlewares/security/permission.middlew
 
 const router = Router();
 
-router.get('/', categoryController.getCategories);
+router.get('/', 
+  categoryController.getCategories
+);
 
 router.post('/', 
   requirePermission('KitchenCategory_cocina', 'Create'), 

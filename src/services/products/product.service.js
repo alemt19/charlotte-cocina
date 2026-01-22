@@ -1,3 +1,4 @@
+import { envs } from '../../config/envs.js';
 import { prisma } from '../../db/client.js';
 
 const getProducts = async ({ activeOnly, categoryId } = {}) => {
@@ -44,72 +45,101 @@ const createProduct = async (data) => {
   let finalImageUrl = null;
 
   if (data.imageFile) {
-    const appUrl = process.env.APP_URL || 'http://localhost:3000';
-    finalImageUrl = `${appUrl}/public/uploads/${data.imageFile.filename}`;
-  } else if (data.imageUrl || data.image_url) {
-    // Si mandaron una URL directa (string)
-    finalImageUrl = data.imageUrl || data.image_url;
+    const appUrl = envs.APP_URL;
+    finalImageUrl = `${appUrl}/api/uploads/${data.imageFile.filename}`;
+  } else if (data.imageUrl) {
+    finalImageUrl = data.imageUrl;
   }
 
-  const prismaData = {
-    name: data.name,
-    description: data.description,
-    basePrice: data.basePrice,
-    imageUrl: finalImageUrl,
-    isActive: data.isActive !== undefined ? data.isActive : true,
-    category: {
-      connect: { id: data.categoryId }
-    }
-  };
-
   return await prisma.kitchenProduct.create({
-    data: prismaData
+    data: {
+      name: data.name,
+      description: data.description,
+      basePrice: parseFloat(data.basePrice),
+      categoryId: data.categoryId,
+      imageUrl: finalImageUrl,
+      isActive: data.isActive !== undefined ? data.isActive : true
+    }
   });
 };
 
 const updateProduct = async (id, data) => {
   const cleanId = id.trim();
+  
+  const existingProduct = await prisma.kitchenProduct.findUnique({
+    where: { id: cleanId }
+  });
 
-  const exists = await prisma.kitchenProduct.findUnique({ where: { id: cleanId } });
-  if (!exists) throw new Error("NOT_FOUND");
+  if (!existingProduct) throw new Error("NOT_FOUND");
 
-  const updateData = { ...data };
+  let finalImageUrl = existingProduct.imageUrl;
 
-  if (updateData.imageFile) {
-    const appUrl = process.env.APP_URL || 'http://localhost:3000';
-    updateData.imageUrl = `${appUrl}/public/uploads/${updateData.imageFile.filename}`;
-    delete updateData.imageFile;
+  if (data.imageFile) {
+    const appUrl = envs.APP_URL;
+    finalImageUrl = `${appUrl}/api/uploads/${data.imageFile.filename}`;
+  } else if (data.imageUrl) {
+    finalImageUrl = data.imageUrl;
   }
 
   return await prisma.kitchenProduct.update({
     where: { id: cleanId },
-    data: updateData
+    data: {
+      name: data.name,
+      description: data.description,
+      basePrice: data.basePrice ? parseFloat(data.basePrice) : undefined,
+      categoryId: data.categoryId,
+      imageUrl: finalImageUrl,
+      isActive: data.isActive
+    }
   });
 };
 
 const deleteProduct = async (id) => {
-  return await prisma.kitchenProduct.delete({
-    where: { id }
+  const cleanId = id.trim();
+  
+  const product = await prisma.kitchenProduct.findUnique({
+    where: { id: cleanId }
+  });
+
+  if (!product) throw new Error("NOT_FOUND");
+
+  return await prisma.kitchenProduct.update({
+    where: { id: cleanId },
+    data: { isActive: false }
   });
 };
 
-const toggleProductStatus = async (id, isActive) => {
+const toggleProductStatus = async (id) => {
+  const cleanId = id.trim();
+  
+  const product = await prisma.kitchenProduct.findUnique({
+    where: { id: cleanId }
+  });
+
+  if (!product) throw new Error("NOT_FOUND");
+
   return await prisma.kitchenProduct.update({
-    where: { id },
-    data: { isActive },
-    select: { id: true, name: true, isActive: true }
+    where: { id: cleanId },
+    data: { isActive: !product.isActive }
   });
 };
 
 const getProductRecipe = async (id) => {
   const cleanId = id.trim();
+  
+  const product = await prisma.kitchenProduct.findUnique({
+    where: { id: cleanId }
+  });
+
+  if (!product) throw new Error("NOT_FOUND");
+
   return await prisma.recipe.findMany({
     where: { productId: cleanId },
     include: { inventoryItem: true }
   });
 };
 
-const checkProductAvailability = async (id) => {
+const checkAvailability = async (id) => {
   const cleanId = id.trim();
 
   const product = await prisma.kitchenProduct.findUnique({
@@ -153,8 +183,6 @@ const checkProductAvailability = async (id) => {
   return {
     productId: product.id,
     status: "AVAILABLE",
-    reason: "OK",
-    stockAlert: null,
     missingItems: []
   };
 };
@@ -167,5 +195,5 @@ export default {
   deleteProduct,
   toggleProductStatus,
   getProductRecipe,
-  checkProductAvailability
+  checkAvailability
 };

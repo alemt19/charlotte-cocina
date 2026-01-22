@@ -8,7 +8,7 @@ const getCategories = async (query = {}) => {
     if (typeof query.activeOnly === 'string') {
       where.isActive = query.activeOnly === 'true';
     } else {
-      where.isActive = !!query.isActive;
+      where.isActive = !!query.activeOnly;
     }
   }
   return await prisma.kitchenCategory.findMany({ where });

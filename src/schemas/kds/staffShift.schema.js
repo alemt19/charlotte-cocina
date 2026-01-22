@@ -5,6 +5,6 @@ export const registerShiftSchema = z.object({
 });
 
 export const getShiftHistorySchema = z.object({
-    start_date: z.string().datetime().optional(),
-    end_date: z.string().datetime().optional(),
+    startDate: z.string().datetime().optional(),
+    endDate: z.string().datetime().optional(),
 });

@@ -5,25 +5,44 @@ import { upload } from '../../middlewares/upload.middleware.js';
 
 const router = Router();
 
-router.get('/', productController.getProducts);
+router.get('/', 
+  productController.getProducts
+);
 
-router.get('/:id', productController.getProductById);
+router.get('/:id', 
+  productController.getProductById
+);
 
-router.post('/', upload.single('image'), productController.createProduct);
+router.post('/', 
+  requirePermission('KitchenProduct_cocina', 'Create'),
+  upload.single('image'), 
+  productController.createProduct
+);
 
-// Actualizar producto (Update)
 router.patch('/:id', 
   requirePermission('KitchenProduct_cocina', 'Update'), 
   upload.single('image'),
   productController.updateProduct
 );
 
-router.delete('/:id', productController.deleteProduct);
+router.delete('/:id', 
+  requirePermission('KitchenProduct_cocina', 'Delete'),
+  productController.deleteProduct
+);
 
-router.patch('/:id/status', productController.toggleProductStatus);
+router.patch('/:id/status', 
+  requirePermission('KitchenProduct_cocina', 'Update'),
+  productController.toggleProductStatus
+);
 
-router.get('/:id/recipe', requirePermission('KitchenProduct_cocina', 'Read'), productController.getProductRecipe);
+router.get('/:id/recipe', 
+  requirePermission('KitchenProduct_cocina', 'Read'), 
+  productController.getProductRecipe
+);
 
-router.get('/:id/availability', requirePermission('KitchenProduct_cocina', 'Read'), productController.checkAvailability);
+router.get('/:id/availability', 
+  requirePermission('KitchenProduct_cocina', 'Read'), 
+  productController.checkAvailability
+);
 
 export default router;

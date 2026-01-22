@@ -2,9 +2,12 @@ import { z } from 'zod';
 
 export const createRecipeSchema = z.object({
   body: z.object({
-    product_id: z.string().uuid(),
-    inventory_item_id: z.string().uuid(),
-    quantity_required: z.number().positive(),
-    apply_on: z.enum(['DINE_IN', 'DELIVERY', 'TAKEOUT', 'PICKUP', 'ALL'])
-  })
+    productId: z.string().uuid('El productId debe ser un UUID válido'),
+    inventoryItemId: z.string().uuid('El inventoryItemId debe ser un UUID válido'),
+    quantityRequired: z.number({
+      required_error: 'quantityRequired es obligatorio',
+      invalid_type_error: 'quantityRequired debe ser un número',
+    }).positive('quantityRequired debe ser mayor a 0'),
+    applyOn: z.enum(['ALL', 'DINE_IN', 'TAKEOUT', 'DELIVERY', 'PICKUP']).optional(),
+  }),
 });

@@ -2,14 +2,14 @@ import { registerShift, getShiftHistory } from '../../services/kds/staffShift.se
 
 const registerShiftController = async (req, res, next) => {
     try {
-        const { staff_id } = req.params;
+        const staffId = req.params.staffId ?? req.params.staff_id;
         const { type } = req.body;
 
     if (!['CHECK_IN', 'CHECK_OUT'].includes(type)) {
         return res.status(400).json({ message: 'Tipo inválido, use CHECK_IN o CHECK_OUT' });
     }
 
-        const shift = await registerShift(staff_id, type);
+        const shift = await registerShift(staffId, type);
         res.status(201).json(shift);
     } catch (error) {
         console.error('Error en registerShiftController:', error);
@@ -20,9 +20,11 @@ const registerShiftController = async (req, res, next) => {
 const getShiftHistoryController = async (req, res, next) => {
     try {
         const { id } = req.params;
-        const { start_date, end_date } = req.query;
 
-        const shifts = await getShiftHistory(id, start_date, end_date);
+        const startDate = req.query.startDate ?? req.query.start_date;
+        const endDate = req.query.endDate ?? req.query.end_date;
+
+        const shifts = await getShiftHistory(id, startDate, endDate);
         res.status(200).json(shifts);
     } catch (error) {
         console.error('Error en getShiftHistoryController:', error);

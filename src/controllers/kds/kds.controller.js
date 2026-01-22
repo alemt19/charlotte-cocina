@@ -13,7 +13,7 @@ import {
 const injectOrderController = async (req, res) => {
     try {
         const parsed = injectOrderSchema.parse(req.body);
-        const result = await injectOrder(parsed);
+        const result = await injectOrder(parsed, req.headers.authorization);
         res.status(201).json(result);
     } catch (error) {
         console.error('Error en injectOrderController:', error);
@@ -46,7 +46,7 @@ const updateTaskStatusController = async (req, res) => {
     try {
         const { id } = req.params;
         const { newStatus } = req.body;
-        const task = await updateTaskStatus(id, newStatus);
+        const task = await updateTaskStatus(id, newStatus, req.headers.authorization);
         res.status(200).json(task);
     } catch (error) {
         res.status(400).json({ message: error.message });
@@ -57,7 +57,7 @@ export const markTaskServedController = async (req, res) => {
     try {
         const { id } = req.params;
         const { staffId } = req.body;
-        const task = await markTaskServed(id, staffId);
+        const task = await markTaskServed(id, staffId, req.headers.authorization);
         res.status(200).json(task);
     } catch (error) {
         res.status(400).json({ message: error.message });
@@ -67,7 +67,7 @@ export const markTaskServedController = async (req, res) => {
 export const rejectTaskController = async (req, res) => {
     try {
         const { id } = req.params;
-        const task = await rejectTask(id);
+        const task = await rejectTask(id, req.headers.authorization);
         res.status(200).json(task);
     } catch (error) {
         res.status(400).json({ message: error.message });
@@ -77,7 +77,7 @@ export const rejectTaskController = async (req, res) => {
 export const cancelExternalOrderController = async (req, res) => {
     try {
         const { externalId } = req.params;
-        const tasks = await cancelExternalOrder(externalId);
+        const tasks = await cancelExternalOrder(externalId, req.headers.authorization);
         res.status(200).json(tasks);
     } catch (error) {
         res.status(400).json({ message: error.message });

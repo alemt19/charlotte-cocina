@@ -24,6 +24,9 @@ export const updateProductSchema = z.object({
 
 export const productStatusSchema = z.object({
   body: z.object({
-    isActive: z.boolean()
+    isActive: z.boolean({
+      required_error: "El campo isActive es obligatorio",
+      invalid_type_error: "isActive debe ser un booleano (true/false)"
+    })
   })
 });

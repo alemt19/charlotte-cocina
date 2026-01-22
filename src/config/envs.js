@@ -7,4 +7,8 @@ export const envs = {
     SECURITY_BASE_URL: process.env.SECURITY_BASE_URL,
     SECURITY_HAS_PERMISSION_PATH:
         process.env.SECURITY_HAS_PERMISSION_PATH || '/api/seguridad/auth/hasPermission',
+    API_URL: process.env.API_URL || 'http://localhost:3000',
+
+    ATENCION_CLIENTE_API_URL: process.env.ATENCION_CLIENTE_API_URL || process.env.API_URL || 'http://localhost:3000',
+    DELIVERY_PICKUP_API_URL: process.env.DELIVERY_PICKUP_API_URL || process.env.API_URL || 'http://localhost:3000',
 };
