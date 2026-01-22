@@ -156,7 +156,7 @@ const getProductRecipe = async (req, res, next) => {
 const checkAvailability = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const result = await productService.checkProductAvailability(id);
+    const result = await productService.checkAvailability(id);
     res.json(result);
   } catch (error) {
     next(error);
