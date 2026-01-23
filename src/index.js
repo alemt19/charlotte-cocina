@@ -5,6 +5,8 @@ import exampleRoutes from './routes/example/example.routes.js';
 import morgan from 'morgan';
 import cors from 'cors';
 import path from 'path'; // <--- Nuevo import
+import fs from 'fs'; // <--- Para cargar swagger.json
+import swaggerUi from 'swagger-ui-express';
 import { fileURLToPath } from 'url'; // <--- Nuevo import
 import { errorHandler } from './middlewares/error.middleware.js';
 import { prisma } from './db/client.js';
@@ -17,6 +19,11 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const BASE_PATH = '/api/kitchen';
 
+// Cargar documentación Swagger
+const swaggerDocument = JSON.parse(
+  fs.readFileSync(path.join(__dirname, '../swagger.json'), 'utf8')
+);
+
 // Middlewares globales
 app.use(bodyParser.json());
 
@@ -24,6 +31,9 @@ app.use(bodyParser.json());
 // Esto permite acceder a http://localhost:3000/public/uploads/foto.jpg
 app.use('/public', express.static(path.join(__dirname, 'public')));
 // ------------------------------------------
+
+// Documentos de la API
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 app.use(morgan('dev'));
 app.use(cors({ origin: envs.ALLOWED_ORIGINS || '*' }));

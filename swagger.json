@@ -1,0 +1,1614 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "Charlotte Cocina API",
+        "description": "API para la gestión de cocina, inventario, productos y KDS (Kitchen Display System) de Charlotte Cocina.",
+        "version": "1.0.0"
+    },
+    "servers": [
+        {
+            "url": "/api/kitchen",
+            "description": "Servidor principal"
+        }
+    ],
+    "components": {
+        "securitySchemes": {
+            "BearerAuth": {
+                "type": "http",
+                "scheme": "bearer",
+                "bearerFormat": "JWT"
+            }
+        },
+        "schemas": {
+            "StandardResponse": {
+                "type": "object",
+                "properties": {
+                    "success": {
+                        "type": "boolean"
+                    },
+                    "message": {
+                        "type": "string"
+                    },
+                    "data": {
+                        "type": "object",
+                        "nullable": true
+                    }
+                }
+            },
+            "ErrorResponse": {
+                "type": "object",
+                "properties": {
+                    "success": {
+                        "type": "boolean",
+                        "example": false
+                    },
+                    "error": {
+                        "type": "string"
+                    },
+                    "message": {
+                        "type": "string"
+                    },
+                    "errors": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "field": {
+                                    "type": "string"
+                                },
+                                "message": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "Category": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "name": {
+                        "type": "string",
+                        "minLength": 3
+                    },
+                    "isActive": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "id",
+                    "name",
+                    "isActive"
+                ]
+            },
+            "Product": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "description": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "basePrice": {
+                        "type": "number",
+                        "minimum": 0
+                    },
+                    "categoryId": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "imageUrl": {
+                        "type": "string",
+                        "format": "url",
+                        "nullable": true
+                    },
+                    "isActive": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "id",
+                    "name",
+                    "basePrice",
+                    "categoryId",
+                    "isActive"
+                ]
+            },
+            "Recipe": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "productId": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "inventoryItemId": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "quantityRequired": {
+                        "type": "number",
+                        "minimum": 0
+                    },
+                    "applyOn": {
+                        "type": "string",
+                        "enum": [
+                            "ALL",
+                            "DINE_IN",
+                            "TAKEOUT",
+                            "DELIVERY",
+                            "PICKUP"
+                        ]
+                    }
+                },
+                "required": [
+                    "id",
+                    "productId",
+                    "inventoryItemId",
+                    "quantityRequired"
+                ]
+            },
+            "InventoryItem": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "INGREDIENT",
+                            "PACKAGING"
+                        ]
+                    },
+                    "unitMeasure": {
+                        "type": "string",
+                        "enum": [
+                            "KG",
+                            "G",
+                            "L",
+                            "ML",
+                            "UNIT"
+                        ]
+                    },
+                    "minStockAlert": {
+                        "type": "number",
+                        "minimum": 0
+                    },
+                    "stock": {
+                        "type": "number"
+                    }
+                },
+                "required": [
+                    "id",
+                    "name",
+                    "type",
+                    "unitMeasure",
+                    "minStockAlert"
+                ]
+            },
+            "KitchenAsset": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "totalQuantity": {
+                        "type": "integer"
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "OPERATIONAL",
+                            "UNDER_MAINTENANCE",
+                            "DAMAGED",
+                            "LOST"
+                        ]
+                    },
+                    "lastAuditDate": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "notes": {
+                        "type": "string",
+                        "nullable": true
+                    }
+                }
+            },
+            "KitchenStaff": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "userId": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "workerCode": {
+                        "type": "string"
+                    },
+                    "role": {
+                        "type": "string",
+                        "enum": [
+                            "CHEF",
+                            "ASISTENTE",
+                            "LIMPIEZA"
+                        ]
+                    },
+                    "isActive": {
+                        "type": "boolean"
+                    }
+                }
+            },
+            "CreateProductRequest": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string"
+                    },
+                    "description": {
+                        "type": "string"
+                    },
+                    "basePrice": {
+                        "type": "number"
+                    },
+                    "categoryId": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "isActive": {
+                        "type": "boolean"
+                    },
+                    "image": {
+                        "type": "string",
+                        "format": "binary",
+                        "description": "Archivo de imagen (multipart/form-data)"
+                    }
+                },
+                "required": [
+                    "name",
+                    "basePrice",
+                    "categoryId"
+                ]
+            },
+            "CreateCategoryRequest": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "minLength": 3
+                    }
+                },
+                "required": [
+                    "name"
+                ]
+            },
+            "LoginRequest": {
+                "type": "object",
+                "properties": {
+                    "email": {
+                        "type": "string",
+                        "format": "email",
+                        "example": "admin@charlotte.com"
+                    },
+                    "password": {
+                        "type": "string",
+                        "format": "password",
+                        "example": "admin"
+                    }
+                },
+                "required": [
+                    "email",
+                    "password"
+                ]
+            },
+            "CreateRecipeRequest": {
+                "type": "object",
+                "properties": {
+                    "productId": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "inventoryItemId": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "quantityRequired": {
+                        "type": "number"
+                    },
+                    "applyOn": {
+                        "type": "string",
+                        "enum": [
+                            "ALL",
+                            "DINE_IN",
+                            "TAKEOUT",
+                            "DELIVERY",
+                            "PICKUP"
+                        ]
+                    }
+                },
+                "required": [
+                    "productId",
+                    "inventoryItemId",
+                    "quantityRequired"
+                ]
+            },
+            "InventoryMovementRequest": {
+                "type": "object",
+                "properties": {
+                    "itemId": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "quantityChange": {
+                        "type": "number"
+                    },
+                    "movementType": {
+                        "type": "string"
+                    },
+                    "reason": {
+                        "type": "string"
+                    },
+                    "costAtTime": {
+                        "type": "number"
+                    }
+                },
+                "required": [
+                    "itemId",
+                    "quantityChange",
+                    "movementType",
+                    "reason"
+                ]
+            }
+        }
+    },
+    "paths": {
+        "/auth/login": {
+            "post": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Iniciar sesión (Módulo de Seguridad)",
+                "description": "Obtiene el token JWT necesario para las rutas protegidas. Este endpoint pertenece al servicio externo de seguridad.",
+                "servers": [
+                    {
+                        "url": "https://charlotte-seguridad.onrender.com/api/seguridad",
+                        "description": "Servidor de Seguridad"
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/LoginRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Login exitoso",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "token": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Credenciales inválidas"
+                    }
+                }
+            }
+        },
+        "/staff": {
+            "get": {
+                "tags": [
+                    "Kitchen Staff"
+                ],
+                "summary": "Listar personal de cocina",
+                "responses": {
+                    "200": {
+                        "description": "Lista de personal",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/StandardResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Kitchen Staff"
+                ],
+                "summary": "Registrar nuevo personal",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "userId": {
+                                        "type": "string",
+                                        "format": "uuid"
+                                    },
+                                    "workerCode": {
+                                        "type": "string"
+                                    },
+                                    "role": {
+                                        "type": "string",
+                                        "enum": [
+                                            "CHEF",
+                                            "ASISTENTE",
+                                            "LIMPIEZA"
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Personal creado"
+                    }
+                }
+            }
+        },
+        "/staff/active": {
+            "get": {
+                "tags": [
+                    "Kitchen Staff"
+                ],
+                "summary": "Personal activo actualmente",
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
+        "/staff/{id}": {
+            "get": {
+                "tags": [
+                    "Kitchen Staff"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Detalle del personal"
+                    }
+                }
+            },
+            "patch": {
+                "tags": [
+                    "Kitchen Staff"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "role": {
+                                        "type": "string"
+                                    },
+                                    "isActive": {
+                                        "type": "boolean"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Actualizado"
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Kitchen Staff"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Eliminado"
+                    }
+                }
+            }
+        },
+        "/staff/{staffId}/shift": {
+            "post": {
+                "tags": [
+                    "Kitchen Staff"
+                ],
+                "summary": "Registrar entrada/salida de turno",
+                "parameters": [
+                    {
+                        "name": "staffId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "type": {
+                                        "type": "string",
+                                        "enum": [
+                                            "CHECK_IN",
+                                            "CHECK_OUT"
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Turno registrado"
+                    }
+                }
+            }
+        },
+        "/staff/{id}/shifts": {
+            "get": {
+                "tags": [
+                    "Kitchen Staff"
+                ],
+                "summary": "Historial de turnos de un empleado",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "name": "startDate",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "endDate",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Historial obtenido"
+                    }
+                }
+            }
+        },
+        "/kds/inject": {
+            "post": {
+                "tags": [
+                    "KDS"
+                ],
+                "summary": "Inyectar nuevo pedido externo al KDS",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "externalOrderId": {
+                                        "type": "string",
+                                        "format": "uuid"
+                                    },
+                                    "sourceModule": {
+                                        "type": "string",
+                                        "enum": [
+                                            "AC_MODULE",
+                                            "DP_MODULE"
+                                        ]
+                                    },
+                                    "serviceMode": {
+                                        "type": "string",
+                                        "enum": [
+                                            "DINE_IN",
+                                            "DELIVERY",
+                                            "TAKEOUT"
+                                        ]
+                                    },
+                                    "customerName": {
+                                        "type": "string"
+                                    },
+                                    "items": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "object",
+                                            "properties": {
+                                                "productId": {
+                                                    "type": "string"
+                                                },
+                                                "quantity": {
+                                                    "type": "integer"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Orden inyectada"
+                    }
+                }
+            }
+        },
+        "/kds/queue": {
+            "get": {
+                "tags": [
+                    "KDS"
+                ],
+                "summary": "Ver tareas pendientes en cocina",
+                "responses": {
+                    "200": {
+                        "description": "Cola de tareas"
+                    }
+                }
+            }
+        },
+        "/kds/{id}/assign": {
+            "patch": {
+                "tags": [
+                    "KDS"
+                ],
+                "summary": "Asignar personal a una tarea",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "staffId": {
+                                        "type": "string",
+                                        "format": "uuid"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Asignado"
+                    }
+                }
+            }
+        },
+        "/kds/{id}/status": {
+            "patch": {
+                "tags": [
+                    "KDS"
+                ],
+                "summary": "Actualizar estado de tarea (PENDING, IN_PROGRESS, READY)",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "status": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Estado actualizado"
+                    }
+                }
+            }
+        },
+        "/kds/{id}/served": {
+            "patch": {
+                "tags": [
+                    "KDS"
+                ],
+                "summary": "Marcar tarea como servida",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Tarea marcada como servida"
+                    }
+                }
+            }
+        },
+        "/kds/{id}/reject": {
+            "post": {
+                "tags": [
+                    "KDS"
+                ],
+                "summary": "Anular/Rechazar tarea KDS",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "reason": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Tarea rechazada"
+                    }
+                }
+            }
+        },
+        "/kds/order/{externalId}/cancel": {
+            "post": {
+                "tags": [
+                    "KDS"
+                ],
+                "summary": "Cancelar orden externa completa",
+                "parameters": [
+                    {
+                        "name": "externalId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Orden cancelada"
+                    }
+                }
+            }
+        },
+        "/kds/history": {
+            "get": {
+                "tags": [
+                    "KDS"
+                ],
+                "summary": "Historial de tareas",
+                "responses": {
+                    "200": {
+                        "description": "Historial de tareas"
+                    }
+                }
+            }
+        },
+        "/inventory/items": {
+            "get": {
+                "tags": [
+                    "Inventory"
+                ],
+                "summary": "Listar ítems de inventario",
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Lista de ítems"
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Inventory"
+                ],
+                "summary": "Crear nuevo ítem",
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/InventoryItem"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Creado"
+                    }
+                }
+            }
+        },
+        "/inventory/items/{id}": {
+            "get": {
+                "tags": [
+                    "Inventory"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Detalle del ítem"
+                    }
+                }
+            },
+            "patch": {
+                "tags": [
+                    "Inventory"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "minStockAlert": {
+                                        "type": "number"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Ítem actualizado"
+                    }
+                }
+            }
+        },
+        "/inventory/items/{id}/logs": {
+            "get": {
+                "tags": [
+                    "Inventory"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Logs de movimientos del ítem"
+                    }
+                }
+            }
+        },
+        "/inventory/inbound": {
+            "post": {
+                "tags": [
+                    "Inventory"
+                ],
+                "summary": "Registrar entrada de stock",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/InventoryMovementRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Entrada registrada"
+                    }
+                }
+            }
+        },
+        "/inventory/outbound": {
+            "post": {
+                "tags": [
+                    "Inventory"
+                ],
+                "summary": "Registrar salida de stock (merma, ajuste)",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/InventoryMovementRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Salida registrada"
+                    }
+                }
+            }
+        },
+        "/products": {
+            "get": {
+                "tags": [
+                    "Products"
+                ],
+                "summary": "Listar todos los productos",
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Products"
+                ],
+                "summary": "Crear un producto (con imagen)",
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CreateProductRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Producto creado"
+                    }
+                }
+            }
+        },
+        "/products/{id}": {
+            "get": {
+                "tags": [
+                    "Products"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Detalle del producto"
+                    }
+                }
+            },
+            "patch": {
+                "tags": [
+                    "Products"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "basePrice": {
+                                        "type": "number"
+                                    },
+                                    "image": {
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Producto actualizado"
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Products"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Producto eliminado"
+                    }
+                }
+            }
+        },
+        "/products/{id}/status": {
+            "patch": {
+                "tags": [
+                    "Products"
+                ],
+                "summary": "Activar/Desactivar producto",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "isActive": {
+                                        "type": "boolean"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Estado actualizado"
+                    }
+                }
+            }
+        },
+        "/products/{id}/recipe": {
+            "get": {
+                "tags": [
+                    "Products"
+                ],
+                "summary": "Ver receta del producto",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Receta obtenida"
+                    }
+                }
+            }
+        },
+        "/products/{id}/availability": {
+            "get": {
+                "tags": [
+                    "Products"
+                ],
+                "summary": "Consultar disponibilidad basada en stock",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Disponibilidad obtenida"
+                    }
+                }
+            }
+        },
+        "/categories": {
+            "get": {
+                "tags": [
+                    "Products"
+                ],
+                "summary": "Listar categorías",
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Products"
+                ],
+                "summary": "Crear categoría",
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CreateCategoryRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Categoría creada"
+                    }
+                }
+            }
+        },
+        "/categories/{id}": {
+            "patch": {
+                "tags": [
+                    "Products"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "isActive": {
+                                        "type": "boolean"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Categoría actualizada"
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Products"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Categoría eliminada"
+                    }
+                }
+            }
+        },
+        "/recipes": {
+            "post": {
+                "tags": [
+                    "Products"
+                ],
+                "summary": "Crear receta para un producto",
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CreateRecipeRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Receta creada"
+                    }
+                }
+            }
+        },
+        "/assets": {
+            "get": {
+                "tags": [
+                    "Assets"
+                ],
+                "summary": "Listar activos físicos de cocina",
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Assets"
+                ],
+                "summary": "Registrar nuevo activo",
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "totalQuantity": {
+                                        "type": "integer"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Activo creado"
+                    }
+                }
+            }
+        },
+        "/assets/{id}": {
+            "get": {
+                "tags": [
+                    "Assets"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Detalle del activo"
+                    }
+                }
+            },
+            "patch": {
+                "tags": [
+                    "Assets"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "status": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Activo actualizado"
+                    }
+                }
+            }
+        },
+        "/assets/{id}/logs": {
+            "get": {
+                "tags": [
+                    "Assets"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Historial del activo"
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Assets"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "action": {
+                                        "type": "string"
+                                    },
+                                    "notes": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Log registrado"
+                    }
+                }
+            }
+        }
+    }
+}
