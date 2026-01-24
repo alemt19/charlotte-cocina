@@ -11,6 +11,11 @@
             "description": "Servidor principal"
         }
     ],
+    "security": [
+        {
+            "BearerAuth": []
+        }
+    ],
     "components": {
         "securitySchemes": {
             "BearerAuth": {
