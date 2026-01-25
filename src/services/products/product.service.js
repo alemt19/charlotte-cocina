@@ -2,8 +2,21 @@ import { envs } from '../../config/envs.js';
 import { prisma } from '../../db/client.js';
 import { uploadImageToSupabase } from '../../services/storage.service.js';
 
-const getProducts = async () => {
+const getProducts = async (filters = {}) => {
+  const { activeOnly, categoryId } = filters;
+
+  const where = {};
+
+  if (activeOnly === 'true' || activeOnly === true) {
+    where.isActive = true;
+  }
+
+  if (categoryId) {
+    where.categoryId = categoryId;
+  }
+
   return await prisma.kitchenProduct.findMany({
+    where,
     include: {
       category: true 
     }

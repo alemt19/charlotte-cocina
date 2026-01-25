@@ -1,8 +1,22 @@
 import productService from '../../services/products/product.service.js';
+import { getProductsQuerySchema } from '../../schemas/products/product.schema.js';
 
 const getProducts = async (req, res, next) => {
   try {
-    const products = await productService.getProducts();
+    const validation = getProductsQuerySchema.safeParse({ query: req.query });
+
+    if (!validation.success) {
+      return res.status(400).json({
+        success: false,
+        error: "VALIDATION_ERROR",
+        message: validation.error.errors[0].message
+      });
+    }
+
+    // Pasamos los filtros al servicio; mantiene compatibilidad si no vienen
+    const { activeOnly, categoryId } = validation.data.query;
+
+    const products = await productService.getProducts({ activeOnly, categoryId });
     res.status(200).json({ 
       success: true, 
       message: "Lista de productos obtenida correctamente",
