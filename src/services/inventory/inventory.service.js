@@ -153,11 +153,6 @@ export const getItemLogs = async (itemId) => {
     orderBy: { createdAt: 'desc' },
     include: {
       item: true,
-      select: {
-        id: true,
-        name: true,
-        type: true
-      }
     }
   });
 };
