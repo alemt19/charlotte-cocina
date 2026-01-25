@@ -18,6 +18,12 @@ router.post('/kds/inject', injectOrderController);
 // Endpoint 2: Mostrar tareas pendientes
 router.get('/kds/queue', getQueueTasksController);
 
+// Endpoint 7: Cancelar orden externa completa
+router.post('/kds/order/:externalId/cancel', cancelExternalOrderController);
+
+// Endpoint 8: Historial de tareas
+router.get('/kds/history', getTaskHistoryController);
+
 // Endpoint 3: Asignar chef/mesero
 router.patch('/kds/:id/assign', assignTaskController);
 
@@ -30,10 +36,5 @@ router.patch('/kds/:id/served', markTaskServedController);
 // Endpoint 6: Anular tarea KDS
 router.post('/kds/:id/reject', rejectTaskController);
 
-// Endpoint 7: Cancelar orden externa completa
-router.post('/kds/order/:externalId/cancel', cancelExternalOrderController);
-
-// Endpoint 8: Historial de tareas
-router.get('/kds/history', getTaskHistoryController);
 
 export default router;
