@@ -129,12 +129,3 @@ export {
     getActiveKitchenStaff,
     validateWorkerCode
 };
-
-export {
-    getAllKitchenStaff,
-    getKitchenStaffById,
-    createKitchenStaff,
-    updateKitchenStaff,
-    deleteKitchenStaff,
-    getActiveKitchenStaff,
-};
