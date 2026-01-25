@@ -235,24 +235,34 @@ const getQueueTasks = async (status) => {
             orderBy: [
                 { priorityLevel: 'asc' },
                 { createdAt: 'asc' },
-        ],
-    });
+            ],
+            include: {
+                waiter: true, // Includes KitchenStaff relation
+                chef: true,
+            }
+        });
 
         const productIds = [...new Set(tasks.map(t => t.productId))];
 
         const products = await prisma.kitchenProduct.findMany({
-        where: { id: { in: productIds } },
-        select: { id: true, name: true },
-    });
+            where: { id: { in: productIds } },
+            select: { id: true, name: true },
+        });
 
         const productMap = Object.fromEntries(products.map(p => [p.id, p]));
 
-        const tasksWithProduct = tasks.map(task => ({
-        ...task,
-        product: productMap[task.productId] || null,
-    }));
+        // OPTIONAL: If we had a bulk user fetcher, we would do it here using tasks.map(t => t.waiter?.userId)
+        
+        const tasksWithProduct = tasks.map(task => {
+            const t = {
+                ...task,
+                product: productMap[task.productId] || null,
+            };
 
-    return tasksWithProduct;
+            return t;
+        });
+
+        return tasksWithProduct;
     } catch (error) {
         console.error('Error en getQueueTasks:', error);
         throw error;
