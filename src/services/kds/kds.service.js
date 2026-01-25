@@ -446,7 +446,7 @@ export const cancelExternalOrder = async (externalId, authorization) => {
 export const getTaskHistory = async (filters) => {
     const { startDate, endDate, chefId, status } = filters;
 
-    return await prisma.kdsProductionQueue.findMany({
+    const tasks = await prisma.kdsProductionQueue.findMany({
         where: {
         ...(status ? { status } : {}),
         ...(chefId ? { assignedChefId: chefId } : {}),
@@ -455,12 +455,31 @@ export const getTaskHistory = async (filters) => {
         : {}),
     },
         include: {
-        product: { select: { name: true } },
         chef: true,
         waiter: true,
     },
     orderBy: { createdAt: 'desc' },
     });
+
+    const productIds = [...new Set(tasks.map(t => t.productId))];
+
+    const products = await prisma.kitchenProduct.findMany({
+        where: { id: { in: productIds } },
+        select: { id: true, name: true },
+    });
+
+    const productMap = Object.fromEntries(products.map(p => [p.id, p]));
+
+    const tasksWithProduct = tasks.map(task => {
+        const t = {
+            ...task,
+            product: productMap[task.productId] || null,
+        };
+
+        return t;
+    });
+
+    return tasksWithProduct;
 };
 
 export { injectOrder, getQueueTasks, assignTask, updateTaskStatus };
