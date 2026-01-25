@@ -1,5 +1,6 @@
 import { envs } from '../../config/envs.js';
 import { prisma } from '../../db/client.js';
+import { uploadImageToSupabase } from '../../services/storage.service.js';
 
 const getProducts = async () => {
   return await prisma.kitchenProduct.findMany({
@@ -22,16 +23,13 @@ const getProductById = async (id) => {
   return product;
 };
 
-// --- MODIFICADO PARA MANEJAR IMÁGENES ---
+// --- MODIFICADO PARA MANEJAR IMÁGENES CON SUPABASE ---
 const createProduct = async (data) => {
   let finalImageUrl = null;
 
-  // Si recibimos un archivo desde el controlador
+  // Si recibimos un archivo desde el controlador (viene en memoria)
   if (data.imageFile) {
-    // Detectamos si estamos en local o prod
-    const appUrl = envs.API_URL || 'http://localhost:3000';
-    // Construimos la URL: http://localhost:3000/public/uploads/nombre-archivo.jpg
-    finalImageUrl = `${appUrl}/public/uploads/${data.imageFile.filename}`;
+    finalImageUrl = await uploadImageToSupabase(data.imageFile);
   } else if (data.imageUrl || data.image_url) {
     // Si mandaron una URL directa (string)
     finalImageUrl = data.imageUrl || data.image_url;
@@ -59,8 +57,7 @@ const updateProduct = async (id, data) => {
   const updateData = { ...data };
 
   if (updateData.imageFile) {
-    const appUrl = envs.API_URL || 'http://localhost:3000';
-    updateData.imageUrl = `${appUrl}/public/uploads/${updateData.imageFile.filename}`;
+    updateData.imageUrl = await uploadImageToSupabase(updateData.imageFile);
     delete updateData.imageFile;
   }
 

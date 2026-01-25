@@ -11,4 +11,9 @@ export const envs = {
 
     ATENCION_CLIENTE_API_URL: process.env.ATENCION_CLIENTE_API_URL || process.env.API_URL || 'http://localhost:3000',
     DELIVERY_PICKUP_API_URL: process.env.DELIVERY_PICKUP_API_URL || process.env.API_URL || 'http://localhost:3000',
+
+    // Supabase Storage Credentials
+    SUPABASE_URL: process.env.SUPABASE_URL,
+    SUPABASE_KEY: process.env.SUPABASE_KEY,
+    SUPABASE_BUCKET_NAME: process.env.SUPABASE_BUCKET_NAME || 'products',
 };

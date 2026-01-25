@@ -6,18 +6,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Configuración de almacenamiento
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    // Las imágenes se guardarán en src/public/uploads
-    cb(null, path.join(__dirname, '../public/uploads'));
-  },
-  filename: function (req, file, cb) {
-    // Generamos nombre único: fecha-nombreOriginal
-    // Ej: 1709888-tomate.jpg
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, uniqueSuffix + path.extname(file.originalname));
-  }
-});
+// Modificado para usar memoria en lugar de disco (para Supabase)
+const storage = multer.memoryStorage();
 
 // Filtro para aceptar solo imágenes
 const fileFilter = (req, file, cb) => {
