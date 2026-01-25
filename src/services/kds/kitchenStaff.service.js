@@ -99,6 +99,37 @@ const getActiveKitchenStaff = async () => {
     }
 };
 
+const validateWorkerCode = async (workerCode) => {
+    try {
+        const staff = await prisma.kitchenStaff.findUnique({
+            where: { workerCode },
+        });
+
+        if (!staff) {
+            throw new Error('Código de trabajador inválido.');
+        }
+
+        if (!staff.isActive) {
+            throw new Error('El trabajador no está activo.');
+        }
+
+        return staff; // Returns the staff object (id, role, etc.)
+    } catch (error) {
+        console.error('Error en validateWorkerCode:', error);
+        throw error; // Rethrow to be handled by controller
+    }
+};
+
+export {
+    getAllKitchenStaff,
+    getKitchenStaffById,
+    createKitchenStaff,
+    updateKitchenStaff,
+    deleteKitchenStaff,
+    getActiveKitchenStaff,
+    validateWorkerCode
+};
+
 export {
     getAllKitchenStaff,
     getKitchenStaffById,

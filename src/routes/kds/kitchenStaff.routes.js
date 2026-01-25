@@ -1,8 +1,9 @@
 import { Router } from 'express';
-import { getAll, getById, create, update, remove, getActiveKitchenStaffController } from '../../controllers/kds/kitchenStaff.controller.js';
+import { getAll, getById, create, update, remove, getActiveKitchenStaffController, validateWorkerCodeController } from '../../controllers/kds/kitchenStaff.controller.js';
 
 const router = Router();
 
+router.post('/staff/validate', validateWorkerCodeController);
 router.get('/staff', getAll);
 router.get('/staff/active', getActiveKitchenStaffController);
 router.get('/staff/:id', getById);

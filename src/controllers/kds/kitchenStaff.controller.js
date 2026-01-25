@@ -5,9 +5,28 @@ import {
     updateKitchenStaff,
     deleteKitchenStaff,
     getActiveKitchenStaff,
+    validateWorkerCode
 } from '../../services/kds/kitchenStaff.service.js';
 
 import { createKitchenStaffSchema, updateKitchenStaffSchema, idSchema } from '../../schemas/kds/kitchenStaff.schema.js';
+
+const validateWorkerCodeController = async (req, res, next) => {
+    try {
+        const { workerCode } = req.body;
+        if (!workerCode) {
+            return res.status(400).json({ message: 'workerCode es requerido' });
+        }
+        
+        const staff = await validateWorkerCode(workerCode);
+        res.status(200).json(staff);
+    } catch (error) {
+        // If "Código de trabajador inválido", return 401 or 404
+        if (error.message.includes('inválido') || error.message.includes('no está activo')) {
+            return res.status(401).json({ message: error.message });
+        }
+        next(error);
+    }
+};
 
 const getAll = async (req, res, next) => {
     try {
@@ -92,4 +111,4 @@ const getActiveKitchenStaffController = async (req, res) => {
     }
 };
 
-export { getAll, getById, create, update, remove, getActiveKitchenStaffController };
+export { getAll, getById, create, update, remove, getActiveKitchenStaffController, validateWorkerCodeController };

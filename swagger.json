@@ -443,6 +443,85 @@
                 }
             }
         },
+        "/staff/validate": {
+            "post": {
+                "tags": [
+                    "Kitchen Staff"
+                ],
+                "summary": "Validar código de trabajador",
+                "description": "Verifica si un código de trabajador es válido y el personal está activo.",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "workerCode": {
+                                        "type": "string",
+                                        "example": "1234"
+                                    }
+                                },
+                                "required": [
+                                    "workerCode"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Código válido",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "id": {
+                                            "type": "string",
+                                            "format": "uuid"
+                                        },
+                                        "userId": {
+                                            "type": "string",
+                                            "format": "uuid"
+                                        },
+                                        "workerCode": {
+                                            "type": "string"
+                                        },
+                                        "role": {
+                                            "type": "string"
+                                        },
+                                        "isActive": {
+                                            "type": "boolean"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Datos de entrada inválidos",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Código inválido o personal inactivo",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/staff": {
             "get": {
                 "tags": [
@@ -1004,7 +1083,10 @@
                         "in": "query",
                         "schema": {
                             "type": "string",
-                            "enum": ["INGREDIENT", "PACKAGING"]
+                            "enum": [
+                                "INGREDIENT",
+                                "PACKAGING"
+                            ]
                         }
                     },
                     {
@@ -1012,7 +1094,10 @@
                         "in": "query",
                         "schema": {
                             "type": "string",
-                            "enum": ["LOW", "OK"]
+                            "enum": [
+                                "LOW",
+                                "OK"
+                            ]
                         }
                     }
                 ],
@@ -1044,11 +1129,20 @@
                                     },
                                     "type": {
                                         "type": "string",
-                                        "enum": ["INGREDIENT", "PACKAGING"]
+                                        "enum": [
+                                            "INGREDIENT",
+                                            "PACKAGING"
+                                        ]
                                     },
                                     "unitMeasure": {
                                         "type": "string",
-                                        "enum": ["KG", "G", "L", "ML", "UNIT"]
+                                        "enum": [
+                                            "KG",
+                                            "G",
+                                            "L",
+                                            "ML",
+                                            "UNIT"
+                                        ]
                                     },
                                     "minStockAlert": {
                                         "type": "number",
@@ -1125,7 +1219,13 @@
                                     },
                                     "unitMeasure": {
                                         "type": "string",
-                                        "enum": ["KG", "G", "L", "ML", "UNIT"]
+                                        "enum": [
+                                            "KG",
+                                            "G",
+                                            "L",
+                                            "ML",
+                                            "UNIT"
+                                        ]
                                     }
                                 }
                             }
@@ -1189,14 +1289,24 @@
                                     },
                                     "movementType": {
                                         "type": "string",
-                                        "enum": ["PURCHASE", "RETURN_RESTOCK", "ADJUSTMENT"]
+                                        "enum": [
+                                            "PURCHASE",
+                                            "RETURN_RESTOCK",
+                                            "ADJUSTMENT"
+                                        ]
                                     },
                                     "reason": {
                                         "type": "string",
                                         "minLength": 1
                                     }
                                 },
-                                "required": ["itemId", "quantityChange", "costAtTime", "movementType", "reason"]
+                                "required": [
+                                    "itemId",
+                                    "quantityChange",
+                                    "costAtTime",
+                                    "movementType",
+                                    "reason"
+                                ]
                             }
                         }
                     }
@@ -1231,14 +1341,23 @@
                                     },
                                     "movementType": {
                                         "type": "string",
-                                        "enum": ["WASTE", "ADJUSTMENT", "SALE"]
+                                        "enum": [
+                                            "WASTE",
+                                            "ADJUSTMENT",
+                                            "SALE"
+                                        ]
                                     },
                                     "reason": {
                                         "type": "string",
                                         "minLength": 1
                                     }
                                 },
-                                "required": ["itemId", "quantityChange", "movementType", "reason"]
+                                "required": [
+                                    "itemId",
+                                    "quantityChange",
+                                    "movementType",
+                                    "reason"
+                                ]
                             }
                         }
                     }
@@ -1654,7 +1773,12 @@
                         "in": "query",
                         "schema": {
                             "type": "string",
-                            "enum": ["OPERATIONAL", "UNDER_MAINTENANCE", "DAMAGED", "LOST"]
+                            "enum": [
+                                "OPERATIONAL",
+                                "UNDER_MAINTENANCE",
+                                "DAMAGED",
+                                "LOST"
+                            ]
                         }
                     },
                     {
@@ -1698,7 +1822,12 @@
                                     },
                                     "status": {
                                         "type": "string",
-                                        "enum": ["OPERATIONAL", "UNDER_MAINTENANCE", "DAMAGED", "LOST"]
+                                        "enum": [
+                                            "OPERATIONAL",
+                                            "UNDER_MAINTENANCE",
+                                            "DAMAGED",
+                                            "LOST"
+                                        ]
                                     },
                                     "lastAuditDate": {
                                         "type": "string",
@@ -1708,7 +1837,9 @@
                                         "type": "string"
                                     }
                                 },
-                                "required": ["name"]
+                                "required": [
+                                    "name"
+                                ]
                             }
                         }
                     }
@@ -1779,7 +1910,12 @@
                                     },
                                     "status": {
                                         "type": "string",
-                                        "enum": ["OPERATIONAL", "UNDER_MAINTENANCE", "DAMAGED", "LOST"]
+                                        "enum": [
+                                            "OPERATIONAL",
+                                            "UNDER_MAINTENANCE",
+                                            "DAMAGED",
+                                            "LOST"
+                                        ]
                                     },
                                     "notes": {
                                         "type": "string"
@@ -1861,7 +1997,11 @@
                                         "format": "uuid"
                                     }
                                 },
-                                "required": ["quantityChange", "reason", "reportedBy"]
+                                "required": [
+                                    "quantityChange",
+                                    "reason",
+                                    "reportedBy"
+                                ]
                             }
                         }
                     }
