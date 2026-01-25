@@ -90,6 +90,12 @@ export const getAssetLogs = async (assetId) => {
           workerCode: true,
           role: true
         }
+      },
+      asset: {
+        select: {
+          id: true,
+          name: true
+        }
       }
     }
   });
