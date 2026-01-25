@@ -23,6 +23,13 @@ const createRecipe = async (data) => {
   });
 };
 
+const deleteRecipe = async (id) => {
+  return await prisma.recipe.delete({
+    where: { id }
+  });
+};
+
 export default {
   createRecipe,
+  deleteRecipe
 };

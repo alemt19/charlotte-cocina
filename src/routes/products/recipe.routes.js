@@ -13,4 +13,10 @@ router.post('/',
   recipeController.createRecipe
 );
 
+// Eliminar receta (Delete)
+router.delete('/:id',
+  requirePermission('Recipe_cocina', 'Delete'),
+  recipeController.deleteRecipe
+);
+
 export default router;
