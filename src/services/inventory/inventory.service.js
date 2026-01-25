@@ -1,3 +1,4 @@
+import { includes } from 'zod';
 import { prisma } from '../../db/client.js';
 
 export const findItems = async ({ type, stockStatus }) => {
@@ -149,6 +150,14 @@ export const registerOutbound = async ({ itemId, quantityChange, movementType, r
 export const getItemLogs = async (itemId) => {
   return await prisma.inventoryLog.findMany({
     where: { itemId },
-    orderBy: { createdAt: 'desc' }
+    orderBy: { createdAt: 'desc' },
+    include: {
+      item: true,
+      select: {
+        id: true,
+        name: true,
+        type: true
+      }
+    }
   });
 };
