@@ -1,13 +1,37 @@
+import { is } from 'zod/locales';
 import { prisma } from '../../db/client.js';
+import axios from 'axios';
 
-const getAllKitchenStaff = async () => {
+const EXTERNAL_USERS_API = 'https://charlotte-seguridad.onrender.com/api/seguridad/users';
+
+const generatePin = () => {
+    return Math.floor(100000 + Math.random() * 900000).toString();
+};
+
+const getAllKitchenStaff = async (token) => {
     try {
-        return await prisma.kitchenStaff.findMany({
-            where: { isActive: true },
-    });
+        const localStaff = await prisma.kitchenStaff.findMany({
+            orderBy: { id: 'desc' }
+        });
+
+        const externalUsersResponse = await axios.get(EXTERNAL_USERS_API, {
+            headers: { Authorization: token }
+        });
+        const externalUsers = externalUsersResponse.data;
+
+        return localStaff.map(staff => {
+            const user = externalUsers.find(u => u.id === staff.userId);
+            const { workerCode, ...safeStaff } = staff;
+            return {
+                ...safeStaff,
+                externalName: user ? `${user.name} ${user.lastName}` : 'Usuario Desconocido',
+                externalEmail: user ? user.email : 'N/A',
+                externalRole: user ? user.rol : 'N/A'
+            };
+        });
     } catch (error) {
-    console.error('Error en getAllKitchenStaff:', error);
-    throw new Error('No se pudo obtener la lista de KitchenStaff.');
+        console.error('Error en getAllKitchenStaff:', error);
+        throw new Error('No se pudo obtener la lista de KitchenStaff.');
     }
 };
 
@@ -24,34 +48,41 @@ const getKitchenStaffById = async (id) => {
 
 const createKitchenStaff = async (data) => {
     try {
-        
-        const existingStaff = await prisma.kitchenStaff.findFirst({
-            where: {
-                OR: [
-                    { workerCode: data.workerCode },
-                    { userId: data.userId }
-                ]
-            },
+        const existingStaff = await prisma.kitchenStaff.findUnique({
+             where: { userId: data.userId }
         });
 
         if (existingStaff) {
-            throw new Error('Ya existe un KitchenStaff con el mismo workerCode o userId.');
+             throw new Error('El usuario ya está asignado al personal de cocina.');
         }
+
+        let pin = generatePin();
+        let isUnique = false;
+        let attempts = 0;
+        
+        while(!isUnique && attempts < 10) {
+             const check = await prisma.kitchenStaff.findUnique({ where: { workerCode: pin }});
+             if(!check) {
+                isUnique = true;
+             } else {
+                pin = generatePin();
+                attempts++;
+             }
+        }
+        
+        if (!isUnique) throw new Error("No se pudo generar un PIN único, intente nuevamente.");
 
         return await prisma.kitchenStaff.create({
             data: {
                 userId: data.userId,
-                workerCode: data.workerCode,
+                workerCode: pin,
                 role: data.role,
-        },
-    });
+                isActive: true
+            },
+        });
     } catch (error) {
-
-        if (error.message.includes('Ya existe un KitchenStaff')) {
-            throw error;
-        }
-    console.error('Error en createKitchenStaff:', error);
-    throw new Error('No se pudo crear el KitchenStaff. Revisa los datos enviados.');
+        console.error('Error en createKitchenStaff:', error);
+        throw error;
     }
 };
 
@@ -77,6 +108,29 @@ const deleteKitchenStaff = async (id) => {
         console.error(`Error en deleteKitchenStaff con id ${id}:`, error);
         throw new Error(`No se pudo eliminar (soft delete) el KitchenStaff con id ${id}.`);
     }
+};
+
+const regenerateWorkerCode = async (id) => {
+     let pin = generatePin();
+     let isUnique = false;
+     let attempts = 0;
+     while(!isUnique && attempts < 10) {
+          const check = await prisma.kitchenStaff.findUnique({ where: { workerCode: pin }});
+          if(!check) isUnique = true;
+          else {
+            pin = generatePin();
+            attempts++;
+          }
+     }
+     
+     if (!isUnique) throw new Error("No se pudo generar un PIN único.");
+
+     const updated = await prisma.kitchenStaff.update({
+          where: { id },
+          data: { workerCode: pin }
+     });
+     
+     return updated.workerCode;
 };
 
 const getActiveKitchenStaff = async () => {
@@ -127,5 +181,6 @@ export {
     updateKitchenStaff,
     deleteKitchenStaff,
     getActiveKitchenStaff,
-    validateWorkerCode
+    validateWorkerCode,
+    regenerateWorkerCode
 };

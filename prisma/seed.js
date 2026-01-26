@@ -1,22 +1,8 @@
 import { prisma } from '../src/db/client.js';
-import { randomUUID } from 'crypto';
+import { randomInt, randomUUID } from 'crypto';
 
 async function main() {
   console.log('🌱 Starting seeding...');
-
-  // 1. Clean up database (Order matters due to foreign keys)
-  // We ignore User and Post as requested, but we clean the others to ensure a fresh start
-  await prisma.assetLog.deleteMany();
-  await prisma.kdsProductionQueue.deleteMany();
-  await prisma.staffShift.deleteMany();
-  await prisma.recipe.deleteMany();
-  await prisma.inventoryLog.deleteMany();
-  
-  await prisma.kitchenProduct.deleteMany();
-  await prisma.kitchenCategory.deleteMany();
-  await prisma.inventoryItem.deleteMany();
-  await prisma.kitchenAsset.deleteMany();
-  await prisma.kitchenStaff.deleteMany();
 
   console.log('🧹 Database cleaned (excluding Users/Posts)');
 
@@ -139,40 +125,6 @@ async function main() {
   console.log(`✅ Created ${recipesData.length} Recipe entries`);
 
   // ==========================================
-  // 6. KITCHEN STAFF
-  // ==========================================
-  const staffData = [
-    { userId: randomUUID(), workerCode: 'CHEF01', role: 'HEAD_CHEF', isActive: true },
-    { userId: randomUUID(), workerCode: 'COOK01', role: 'CHEF', isActive: true },
-    { userId: randomUUID(), workerCode: 'WAIT01', role: 'WAITER', isActive: true },
-  ];
-
-  const staffMembers = {};
-  for (const staff of staffData) {
-    const created = await prisma.kitchenStaff.create({ data: staff });
-    staffMembers[staff.role] = created; // Simplified mapping by role for demo
-    // Store specific ones if needed
-    if (staff.workerCode === 'CHEF01') staffMembers['HEAD'] = created;
-    if (staff.workerCode === 'COOK01') staffMembers['COOK'] = created;
-    if (staff.workerCode === 'WAIT01') staffMembers['WAITER'] = created;
-  }
-  console.log(`✅ Created ${staffData.length} Staff members`);
-
-  // ==========================================
-  // 7. STAFF SHIFTS
-  // ==========================================
-  const shiftsData = [
-    { staffId: staffMembers['HEAD'].id, shiftStart: new Date(new Date().setHours(8, 0, 0, 0)), isPresent: true },
-    { staffId: staffMembers['COOK'].id, shiftStart: new Date(new Date().setHours(9, 0, 0, 0)), isPresent: true },
-    { staffId: staffMembers['WAITER'].id, shiftStart: new Date(new Date().setHours(11, 0, 0, 0)), isPresent: true },
-  ];
-
-  for (const shift of shiftsData) {
-    await prisma.staffShift.create({ data: shift });
-  }
-  console.log(`✅ Created ${shiftsData.length} Staff Shifts`);
-
-  // ==========================================
   // 8. KITCHEN ASSETS
   // ==========================================
   const assetsData = [
@@ -188,85 +140,6 @@ async function main() {
     const created = await prisma.kitchenAsset.create({ data: asset });
     assets[asset.name] = created;
   }
-  console.log(`✅ Created ${assetsData.length} Kitchen Assets`);
-
-  // ==========================================
-  // 9. ASSET LOGS
-  // ==========================================
-  const assetLogsData = [
-    { assetId: assets['Freidora Doble'].id, quantityChange: 0, reason: 'Reporte de falla en termostato', reportedBy: staffMembers['HEAD'].id },
-    { assetId: assets['Juego de Cuchillos Chef'].id, quantityChange: -1, reason: 'Cuchillo perdido durante turno noche', reportedBy: staffMembers['COOK'].id },
-  ];
-
-  for (const log of assetLogsData) {
-    await prisma.assetLog.create({ data: log });
-  }
-  console.log(`✅ Created ${assetLogsData.length} Asset Logs`);
-
-  // ==========================================
-  // 10. KDS PRODUCTION QUEUE (Pedidos en cocina)
-  // ==========================================
-  const kdsData = [
-    {
-      externalOrderId: 'ORD-1001',
-      sourceModule: 'AC_MODULE',
-      displayLabel: '#1001',
-      customerName: 'Juan Pérez',
-      serviceMode: 'DINE_IN',
-      productId: products['Hamburguesa Royal'].id,
-      quantity: 1,
-      preparationNotes: 'Sin cebolla',
-      status: 'COOKING',
-      priorityLevel: 2,
-      assignedChefId: staffMembers['COOK'].id,
-      startedAt: new Date()
-    },
-    {
-      externalOrderId: 'ORD-1001',
-      sourceModule: 'AC_MODULE',
-      displayLabel: '#1001',
-      customerName: 'Juan Pérez',
-      serviceMode: 'DINE_IN',
-      productId: products['Papas Fritas'].id,
-      quantity: 1,
-      status: 'READY',
-      priorityLevel: 2,
-      assignedChefId: staffMembers['COOK'].id,
-      startedAt: new Date(Date.now() - 1000 * 60 * 10), // 10 mins ago
-      finishedAt: new Date()
-    },
-    {
-      externalOrderId: 'ORD-1002',
-      sourceModule: 'DP_MODULE',
-      displayLabel: '#1002',
-      customerName: 'Maria Garcia',
-      serviceMode: 'DELIVERY',
-      productId: products['Pizza Pepperoni'].id,
-      quantity: 2,
-      status: 'PENDING',
-      priorityLevel: 1
-    }
-  ];
-
-  for (const kds of kdsData) {
-    await prisma.kdsProductionQueue.create({ data: kds });
-  }
-  console.log(`✅ Created ${kdsData.length} KDS Items`);
-
-  // ==========================================
-  // 11. INVENTORY LOGS (Movimientos)
-  // ==========================================
-  const inventoryLogsData = [
-    { itemId: inventoryItems['Carne de Res Premium'].id, movementType: 'PURCHASE', quantityChange: 50, costAtTime: 15.00, reason: 'Compra semanal' },
-    { itemId: inventoryItems['Pan de Hamburguesa Artesanal'].id, movementType: 'PURCHASE', quantityChange: 200, costAtTime: 0.80, reason: 'Compra semanal' },
-    { itemId: inventoryItems['Tomate Fresco'].id, movementType: 'WASTE', quantityChange: -2, costAtTime: 3.50, reason: 'Tomates en mal estado' },
-  ];
-
-  for (const log of inventoryLogsData) {
-    await prisma.inventoryLog.create({ data: log });
-  }
-  console.log(`✅ Created ${inventoryLogsData.length} Inventory Logs`);
-
   console.log('🏁 Seeding finished successfully');
 }
 

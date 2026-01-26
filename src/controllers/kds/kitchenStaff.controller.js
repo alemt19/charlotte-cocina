@@ -5,10 +5,11 @@ import {
     updateKitchenStaff,
     deleteKitchenStaff,
     getActiveKitchenStaff,
-    validateWorkerCode
+    validateWorkerCode,
+    regenerateWorkerCode
 } from '../../services/kds/kitchenStaff.service.js';
 
-import { createKitchenStaffSchema, updateKitchenStaffSchema, idSchema } from '../../schemas/kds/kitchenStaff.schema.js';
+import { createKitchenStaffSchema, updateKitchenStaffSchema, idSchema, uuidSchema } from '../../schemas/kds/kitchenStaff.schema.js';
 
 const validateWorkerCodeController = async (req, res, next) => {
     try {
@@ -30,7 +31,8 @@ const validateWorkerCodeController = async (req, res, next) => {
 
 const getAll = async (req, res, next) => {
     try {
-        const staff = await getAllKitchenStaff();
+        const token = req.headers.authorization;
+        const staff = await getAllKitchenStaff(token);
         res.json(staff);
     } catch (error) {
         next(error);
@@ -56,7 +58,7 @@ const getById = async (req, res, next) => {
 
 const update = async (req, res, next) => {
     try {
-        const idValidation = idSchema.safeParse(req.params);
+        const idValidation = uuidSchema.safeParse(req.params);
             if (!idValidation.success) {
                 return res.status(400).json({ errors: idValidation.error.format() });
     }
@@ -75,7 +77,7 @@ const update = async (req, res, next) => {
 
 const remove = async (req, res, next) => {
     try {
-        const validation = idSchema.safeParse(req.params);
+        const validation = uuidSchema.safeParse(req.params);
             if (!validation.success) {
                 return res.status(400).json({ errors: validation.error.format() });
     }
@@ -101,6 +103,20 @@ const create = async (req, res, next) => {
     }
 };
 
+const regeneratePin = async (req, res, next) => {
+    try {
+        const validation = uuidSchema.safeParse(req.params);
+        if (!validation.success) {
+            return res.status(400).json({ errors: validation.error.format() });
+        }
+
+        const newPin = await regenerateWorkerCode(validation.data.id);
+        res.json({ workerCode: newPin });
+    } catch (error) {
+        next(error);
+    }
+};
+
 const getActiveKitchenStaffController = async (req, res) => {
     try {
         const staff = await getActiveKitchenStaff();
@@ -111,4 +127,4 @@ const getActiveKitchenStaffController = async (req, res) => {
     }
 };
 
-export { getAll, getById, create, update, remove, getActiveKitchenStaffController, validateWorkerCodeController };
+export { getAll, getById, create, update, remove, getActiveKitchenStaffController, validateWorkerCodeController, regeneratePin };
