@@ -156,6 +156,13 @@ export const getItemLogs = async (itemId) => {
     orderBy: { createdAt: 'desc' },
     include: {
       item: true,
+      staff: {
+        select: {
+          id: true,
+          workerCode: true,
+          role: true
+        }
+      }
     }
   });
 };

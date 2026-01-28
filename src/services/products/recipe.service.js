@@ -30,8 +30,7 @@ const updateRecipe = async (id, data) => {
     data: {
       ...data,
       quantityRequired: data.quantityRequired ? Number(data.quantityRequired) : undefined
-    },
-  updateRecipe,
+    }
   });
 };
 

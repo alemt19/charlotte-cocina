@@ -121,10 +121,12 @@ const getProductRecipe = async (productId) => {
 
   // CORRECCIÓN: Devuelve camelCase
   return recipes.map(item => ({
+    id: item.id,
     ingredientName: item.inventoryItem?.name || "Ingrediente desconocido",
     qty: item.quantityRequired,
     unit: item.inventoryItem?.unitMeasure || "UNIDAD", // Corregido: en Prisma es 'unitMeasure'
-    scope: item.applyOn || "TODO"
+    scope: item.applyOn || "TODO",
+    isMandatory: item.isMandatory
   }));
 };
 
