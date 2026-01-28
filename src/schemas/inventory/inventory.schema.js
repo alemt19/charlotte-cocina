@@ -23,14 +23,16 @@ export const inboundSchema = z.object({
   quantityChange: z.number().positive(),
   costAtTime: z.number().nonnegative(),
   movementType: z.enum(['PURCHASE', 'RETURN_RESTOCK', 'ADJUSTMENT']),
-  reason: z.string().min(1)
+  reason: z.string().min(1),
+  staffId: z.string().uuid().optional(),
 });
 
 export const outboundSchema = z.object({
   itemId: z.string().uuid(),
   quantityChange: z.number().positive(),
   movementType: z.enum(['WASTE', 'ADJUSTMENT', 'SALE']),
-  reason: z.string().min(1)
+  reason: z.string().min(1),
+  staffId: z.string().uuid().optional(),
 });
 
 export default {

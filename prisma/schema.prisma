@@ -123,6 +123,7 @@ model Recipe {
   productId        String      @map("product_id") @db.Uuid
   inventoryItemId  String      @map("inventory_item_id") @db.Uuid
   quantityRequired Decimal     @map("quantity_required") @db.Decimal(10, 3)
+  isMandatory      Boolean     @default(true) @map("is_mandatory")
   applyOn          RecipeScope @default(ALL) @map("apply_on")
 
   // Relaciones
@@ -160,10 +161,12 @@ model InventoryLog {
   quantityChange Decimal      @map("quantity_change") @db.Decimal(10, 3)
   costAtTime     Decimal?     @map("cost_at_time") @db.Decimal(10, 2)
   reason         String?      @db.Text
+  staffId        String?      @map("staff_id") @db.Uuid
   createdAt      DateTime     @default(now()) @map("created_at")
 
   // Relaciones
-  item InventoryItem @relation(fields: [itemId], references: [id])
+  item  InventoryItem @relation(fields: [itemId], references: [id])
+  staff KitchenStaff? @relation(fields: [staffId], references: [id])
 
   @@map("inventory_logs")
 }
@@ -213,6 +216,7 @@ model KitchenStaff {
   assignedCooking KdsProductionQueue[] @relation("ChefRelation")
   assignedServing KdsProductionQueue[] @relation("WaiterRelation")
   assetReports    AssetLog[]
+  inventoryLogs   InventoryLog[]
 
   @@map("kitchen_staff")
 }

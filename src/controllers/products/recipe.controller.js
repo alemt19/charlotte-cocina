@@ -17,6 +17,16 @@ const createRecipe = async (req, res, next) => {
   }
 };
 
+const updateRecipe = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const updatedRecipe = await recipeService.updateRecipe(id, req.body);
+    res.status(200).json({ success: true, message: "Receta actualizada", data: updatedRecipe });
+  } catch (error) {
+    next(error);
+  }
+};
+
 const deleteRecipe = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -29,5 +39,6 @@ const deleteRecipe = async (req, res, next) => {
 
 export default {
   createRecipe,
-  deleteRecipe
+  deleteRecipe,
+  updateRecipe
 };

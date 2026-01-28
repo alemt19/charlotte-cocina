@@ -77,9 +77,9 @@ export const registerInbound = async (req, res) => {
   const parsed = inboundSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: 'Body inválido', details: parsed.error.format() });
 
-  const { itemId, quantityChange, costAtTime, movementType, reason } = parsed.data;
+  const { itemId, quantityChange, costAtTime, movementType, reason, staffId } = parsed.data;
   try {
-    const result = await inventoryService.registerInbound({ itemId, quantityChange, costAtTime, movementType, reason });
+    const result = await inventoryService.registerInbound({ itemId, quantityChange, costAtTime, movementType, reason, staffId });
     return res.status(201).json(result);
   } catch (err) {
     console.error('Error registerInbound:', err);
@@ -91,9 +91,9 @@ export const registerOutbound = async (req, res) => {
   const parsed = outboundSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: 'Body inválido', details: parsed.error.format() });
 
-  const { itemId, quantityChange, movementType, reason } = parsed.data;
+  const { itemId, quantityChange, movementType, reason, staffId } = parsed.data;
   try {
-    const result = await inventoryService.registerOutbound({ itemId, quantityChange, movementType, reason });
+    const result = await inventoryService.registerOutbound({ itemId, quantityChange, movementType, reason, staffId });
     return res.status(201).json(result);
   } catch (err) {
     console.error('Error registerOutbound:', err);

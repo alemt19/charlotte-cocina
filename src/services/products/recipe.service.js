@@ -1,7 +1,7 @@
 import { prisma } from '../../db/client.js';
 
 const createRecipe = async (data) => {
-  const { productId, inventoryItemId, quantityRequired, applyOn } = data;
+  const { productId, inventoryItemId, quantityRequired, applyOn, isMandatory } = data;
 
   if (Number(quantityRequired) <= 0) {
     throw new Error("QUANTITY_MUST_BE_POSITIVE");
@@ -18,8 +18,20 @@ const createRecipe = async (data) => {
       productId,
       inventoryItemId,
       quantityRequired: Number(quantityRequired),
-      applyOn: scope
+      applyOn: scope,
+      isMandatory: isMandatory !== undefined ? isMandatory : true
     }
+  });
+};
+
+const updateRecipe = async (id, data) => {
+  return await prisma.recipe.update({
+    where: { id },
+    data: {
+      ...data,
+      quantityRequired: data.quantityRequired ? Number(data.quantityRequired) : undefined
+    },
+  updateRecipe,
   });
 };
 
@@ -31,5 +43,6 @@ const deleteRecipe = async (id) => {
 
 export default {
   createRecipe,
-  deleteRecipe
+  deleteRecipe,
+  updateRecipe
 };

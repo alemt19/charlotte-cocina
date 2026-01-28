@@ -63,7 +63,7 @@ export const updateItem = async (id, updates) => {
   return await prisma.inventoryItem.update({ where: { id }, data });
 };
 
-export const registerInbound = async ({ itemId, quantityChange, costAtTime, movementType, reason }) => {
+export const registerInbound = async ({ itemId, quantityChange, costAtTime, movementType, reason, staffId }) => {
   // Ensure item exists
   const item = await prisma.inventoryItem.findUnique({ where: { id: itemId } });
   if (!item) {
@@ -88,7 +88,8 @@ export const registerInbound = async ({ itemId, quantityChange, costAtTime, move
         movementType,
         quantityChange: Number(quantityChange),
         costAtTime: Number(costAtTime),
-        reason
+        reason,
+        staffId: staffId || null
       }
     });
 
@@ -98,6 +99,7 @@ export const registerInbound = async ({ itemId, quantityChange, costAtTime, move
         currentStock: newStockTotal,
         averageCost: newAverageCost
       }
+
     });
 
     return { log, updated };
@@ -106,7 +108,7 @@ export const registerInbound = async ({ itemId, quantityChange, costAtTime, move
   return { message: 'Inbound registered', averageCost: result.updated.averageCost, currentStock: result.updated.currentStock };
 };
 
-export const registerOutbound = async ({ itemId, quantityChange, movementType, reason }) => {
+export const registerOutbound = async ({ itemId, quantityChange, movementType, reason, staffId }) => {
   const item = await prisma.inventoryItem.findUnique({ where: { id: itemId } });
   if (!item) {
     const err = new Error('Item not found');
@@ -130,7 +132,8 @@ export const registerOutbound = async ({ itemId, quantityChange, movementType, r
         movementType,
         quantityChange: Number(quantityChange),
         costAtTime: averageCost,
-        reason
+        reason,
+        staffId: staffId || null
       }
     });
 
