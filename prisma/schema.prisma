@@ -249,9 +249,10 @@ model KdsProductionQueue {
   serviceMode ServiceType @map("service_mode")
 
   // 4. Detalle de la Tarea
-  productId        String  @map("product_id") @db.Uuid
-  quantity         Int     @default(1)
-  preparationNotes String? @map("preparation_notes") @db.Text
+  productId           String   @map("product_id") @db.Uuid
+  quantity            Int      @default(1)
+  preparationNotes    String?  @map("preparation_notes") @db.Text
+  excludedIngredients String[] @default([]) @map("excluded_ingredients")
 
   // 5. Estado y Tiempos
   status        KdsStatus @default(PENDING)

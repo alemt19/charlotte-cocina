@@ -148,6 +148,10 @@
                         "type": "number",
                         "minimum": 0
                     },
+                    "isMandatory": {
+                        "type": "boolean",
+                        "default": true
+                    },
                     "applyOn": {
                         "type": "string",
                         "enum": [
@@ -349,6 +353,10 @@
                     "quantityRequired": {
                         "type": "number"
                     },
+                    "isMandatory": {
+                        "type": "boolean",
+                        "default": true
+                    },
                     "applyOn": {
                         "type": "string",
                         "enum": [
@@ -364,6 +372,58 @@
                     "productId",
                     "inventoryItemId",
                     "quantityRequired"
+                ]
+            },
+            "InjectOrderRequest": {
+                "type": "object",
+                "properties": {
+                    "sourceModule": {
+                        "type": "string",
+                        "enum": ["AC_MODULE", "DP_MODULE"]
+                    },
+                    "externalOrderId": {
+                        "type": "string"
+                    },
+                    "serviceMode": {
+                         "type": "string",
+                        "enum": ["DINE_IN", "DELIVERY", "TAKEOUT", "PICKUP"]
+                    },
+                    "displayLabel": {
+                        "type": "string"
+                    },
+                    "customerName": {
+                        "type": "string"
+                    },
+                    "items": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "productId": {
+                                    "type": "string",
+                                    "format": "uuid"
+                                },
+                                "quantity": {
+                                    "type": "integer",
+                                    "minimum": 1
+                                },
+                                "notes": {
+                                    "type": "string"
+                                },
+                                "excludedRecipeIds": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string",
+                                        "format": "uuid"
+                                    }
+                                }
+                            },
+                            "required": ["productId", "quantity"]
+                        }
+                    }
+                },
+                "required": [
+                    "sourceModule", "externalOrderId", "serviceMode", "items"
                 ]
             },
             "InventoryMovementRequest": {
@@ -1752,6 +1812,78 @@
                 "responses": {
                     "201": {
                         "description": "Receta creada"
+                    }
+                }
+            }
+        },
+        "/recipes/{id}": {
+            "patch": {
+                "tags": [
+                    "Products"
+                ],
+                "summary": "Actualizar receta",
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "quantityRequired": { "type": "number" },
+                                    "isMandatory": { "type": "boolean" },
+                                    "applyOn": { 
+                                        "type": "string",
+                                        "enum": ["ALL", "DINE_IN", "TAKEOUT", "DELIVERY", "PICKUP"]
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Actualizado"
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Products"
+                ],
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Eliminado"
                     }
                 }
             }

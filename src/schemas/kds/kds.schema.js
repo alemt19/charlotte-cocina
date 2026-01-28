@@ -11,6 +11,7 @@ export const injectOrderSchema = z.object({
             productId: z.string().uuid(),
             quantity: z.number().int().positive(),
             notes: z.string().optional(),
+            excludedRecipeIds: z.array(z.string().uuid()).optional().default([]),
     })
     ).min(1),
 });

@@ -32,16 +32,28 @@ const rollbackInventoryForTask = async (task, authorization) => {
     const recipeRows = await prisma.recipe.findMany({
         where: { productId: task.productId },
         select: {
+            id: true, // Needed for exclusion check
             inventoryItemId: true,
             quantityRequired: true,
             applyOn: true,
+            isMandatory: true
         },
     });
 
     if (!recipeRows.length) return;
 
+    // Retrieve excluded ingredients from the task
+    const excludedIds = task.excludedIngredients || [];
+
     for (const r of recipeRows) {
+        // Scope check
         if (r.applyOn !== 'ALL' && r.applyOn !== task.serviceMode) continue;
+
+        // Exclusion check (Mirroring logic in injectOrder)
+        const isExcluded = excludedIds.includes(r.id);
+        if (isExcluded && !r.isMandatory) {
+            continue; // Skip restocking if it wasn't consumed
+        }
 
         const costAtTime = await getInventoryCostAtTime(r.inventoryItemId);
 
@@ -173,6 +185,8 @@ const injectOrder = async (orderData, authorization) => {
 
     const createdTasks = [];
     for (const item of items) {
+        const excludedRecipeIds = item.excludedRecipeIds || [];
+
         const task = await tx.kdsProductionQueue.create({
             data: {
                 externalOrderId,
@@ -183,6 +197,7 @@ const injectOrder = async (orderData, authorization) => {
                 productId: item.productId,
                 quantity: item.quantity,
                 preparationNotes: item.notes,
+                excludedIngredients: excludedRecipeIds,
         },
         });
         createdTasks.push(task);
@@ -196,8 +211,21 @@ const injectOrder = async (orderData, authorization) => {
         let deductedCount = 0;
 
         for (const r of recipe) {
+            // Check scope
             if (r.applyOn !== "ALL" && r.applyOn !== serviceMode) {
                 continue;
+            }
+
+            // Check exclusion
+            const isExcluded = excludedRecipeIds.includes(r.id);
+            if (isExcluded) {
+                // If it is mandatory, we cannot exclude it (security check)
+                if (r.isMandatory) {
+                   // Ignore exclusion, proceed to deduct
+                } else {
+                   // Skip deduction
+                   continue;
+                }
             }
 
             try {
@@ -249,14 +277,43 @@ const getQueueTasks = async (status) => {
             select: { id: true, name: true },
         });
 
+        // 1. Fetch Recipes for these products to show ingredients in KDS
+        const recipes = await prisma.recipe.findMany({
+            where: { productId: { in: productIds } },
+            include: { inventoryItem: true }
+        });
+
+        // 2. Group recipes by Product ID
+        const recipeMap = {};
+        recipes.forEach(r => {
+            if(!recipeMap[r.productId]) recipeMap[r.productId] = [];
+            recipeMap[r.productId].push({
+                id: r.id,
+                name: r.inventoryItem?.name || '?',
+                qty: r.quantityRequired.toString(),
+                unit: r.inventoryItem?.unitMeasure || '',
+                isMandatory: r.isMandatory
+            });
+        });
+
         const productMap = Object.fromEntries(products.map(p => [p.id, p]));
 
         // OPTIONAL: If we had a bulk user fetcher, we would do it here using tasks.map(t => t.waiter?.userId)
         
         const tasksWithProduct = tasks.map(task => {
+            // 3. Process recipe for this specific task
+            const productRecipes = recipeMap[task.productId] || [];
+            const excludedIds = task.excludedIngredients || [];
+
+            const finalRecipeList = productRecipes.map(r => ({
+                ...r,
+                isExcluded: excludedIds.includes(r.id)
+            }));
+
             const t = {
                 ...task,
                 product: productMap[task.productId] || null,
+                recipeList: finalRecipeList // Valid for frontend
             };
 
             return t;
