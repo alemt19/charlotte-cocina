@@ -44,8 +44,7 @@ router.patch('/:id/status',
 // --- ENDPOINTS NUEVOS ---
 
 // Endpoint 10: Ver Receta
-router.get('/:id/recipe', 
-  requirePermission('Recipe_cocina', 'Read'), 
+router.get('/:id/recipe',
   productController.getProductRecipe
 );
 
