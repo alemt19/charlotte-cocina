@@ -175,15 +175,18 @@ const injectOrder = async (orderData, authorization) => {
 
     return await prisma.$transaction(async (tx) => {
         const productIds = items.map(item => item.productId);
+        // Fix: Use unique IDs for validation to allow duplicate products in the same order
+        const uniqueProductIds = [...new Set(productIds)];
+        
         const existingProducts = await tx.kitchenProduct.findMany({
-            where: { id: { in: productIds } },
-    });
+            where: { id: { in: uniqueProductIds } },
+        });
 
-    if (existingProducts.length !== productIds.length) {
-        throw new Error('Uno o más productos no existen en KitchenProduct.');
-    }
+        if (existingProducts.length !== uniqueProductIds.length) {
+            throw new Error('Uno o más productos no existen en KitchenProduct.');
+        }
 
-    const createdTasks = [];
+        const createdTasks = [];
     for (const item of items) {
         const excludedRecipeIds = item.excludedRecipeIds || [];
 
