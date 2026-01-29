@@ -157,6 +157,12 @@ const validateWorkerCode = async (workerCode) => {
     try {
         const staff = await prisma.kitchenStaff.findUnique({
             where: { workerCode },
+            include: {
+                shifts: {
+                    where: { shiftEnd: null },
+                    take: 1
+                }
+            }
         });
 
         if (!staff) {
@@ -167,7 +173,10 @@ const validateWorkerCode = async (workerCode) => {
             throw new Error('El trabajador no está activo.');
         }
 
-        return staff; // Returns the staff object (id, role, etc.)
+        return {
+            ...staff,
+            currentShift: staff.shifts[0] || null
+        };
     } catch (error) {
         console.error('Error en validateWorkerCode:', error);
         throw error; // Rethrow to be handled by controller
