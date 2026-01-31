@@ -86,7 +86,7 @@ export const cancelExternalOrderController = async (req, res) => {
 
 export const getTaskHistoryController = async (req, res) => {
     try {
-        const tasks = await getTaskHistory(req.query);
+        const tasks = await getTaskHistory(req.query, req.headers.authorization);
         res.status(200).json(tasks);
     } catch (error) {
         res.status(400).json({ message: error.message });

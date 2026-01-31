@@ -2,6 +2,8 @@ import { envs } from '../../config/envs.js';
 import { prisma } from '../../db/client.js';
 import axios from 'axios';
 
+const EXTERNAL_USERS_API = 'https://charlotte-seguridad.onrender.com/api/seguridad/users';
+
 const normalizeAuthorizationHeader = (authorization) => {
     if (!authorization || typeof authorization !== 'string') return null;
     const trimmed = authorization.trim();
@@ -503,7 +505,7 @@ export const cancelExternalOrder = async (externalId, authorization) => {
     return cancelled;
 };
 
-export const getTaskHistory = async (filters) => {
+export const getTaskHistory = async (filters, authorization) => {
     const { startDate, endDate, chefId, status } = filters;
 
     const tasks = await prisma.kdsProductionQueue.findMany({
@@ -530,13 +532,40 @@ export const getTaskHistory = async (filters) => {
 
     const productMap = Object.fromEntries(products.map(p => [p.id, p]));
 
+    let externalUserMap = {};
+    try {
+        const authConfig = axiosAuthConfig(authorization);
+        if (authConfig?.headers?.Authorization) {
+            const externalUsersResponse = await axios.get(EXTERNAL_USERS_API, authConfig);
+            const externalUsers = externalUsersResponse.data || [];
+            externalUserMap = Object.fromEntries(
+                externalUsers.map(u => [u.id, `${u.name ?? ''} ${u.lastName ?? ''}`.trim()])
+            );
+        }
+    } catch (error) {
+        console.warn('No se pudo cargar usuarios externos para historial KDS:', error.response?.data || error.message);
+    }
+
     const tasksWithProduct = tasks.map(task => {
-        const t = {
+        const chef = task.chef
+            ? {
+                ...task.chef,
+                externalName: externalUserMap[task.chef.userId] || task.chef.externalName || null,
+            }
+            : null;
+        const waiter = task.waiter
+            ? {
+                ...task.waiter,
+                externalName: externalUserMap[task.waiter.userId] || task.waiter.externalName || null,
+            }
+            : null;
+
+        return {
             ...task,
+            chef,
+            waiter,
             product: productMap[task.productId] || null,
         };
-
-        return t;
     });
 
     return tasksWithProduct;
