@@ -47,7 +47,8 @@ const getById = async (req, res, next) => {
             return res.status(400).json({ errors: validation.error.format() });
         }
 
-        const staff = await getKitchenStaffById(validation.data.id);
+        const token = req.headers.authorization;
+        const staff = await getKitchenStaffById(validation.data.id, token);
         if (!staff) {
             return res.status(404).json({ message: 'Personal no encontrado' });
         }
