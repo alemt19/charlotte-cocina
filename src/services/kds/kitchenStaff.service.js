@@ -35,14 +35,33 @@ const getAllKitchenStaff = async (token) => {
     }
 };
 
-const getKitchenStaffById = async (id) => {
+const getKitchenStaffById = async (id, token) => {
     try {
-        return await prisma.kitchenStaff.findUnique({
+        const staff = await prisma.kitchenStaff.findUnique({
             where: { id },
-    });
+        });
+        if (!staff) return null;
+
+        // Enriquecer con datos del usuario externo
+        let user = null;
+        try {
+            const resp = await axios.get(`${EXTERNAL_USERS_API}/${staff.userId}`, token ? { headers: { Authorization: token } } : {});
+            user = resp.data;
+        } catch (e) {
+            // Fallback silencioso si no hay token o falla la consulta
+            user = null;
+        }
+
+        const { workerCode, ...safeStaff } = staff;
+        return {
+            ...safeStaff,
+            externalName: user ? `${user.name} ${user.lastName}` : 'Usuario Desconocido',
+            externalEmail: user ? user.email : 'N/A',
+            externalRole: user ? user.rol : 'N/A'
+        };
     } catch (error) {
-    console.error(`Error en getKitchenStaffById con id ${id}:`, error);
-    throw new Error(`No se pudo obtener el KitchenStaff con id ${id}.`);
+        console.error(`Error en getKitchenStaffById con id ${id}:`, error);
+        throw new Error(`No se pudo obtener el KitchenStaff con id ${id}.`);
     }
 };
 
