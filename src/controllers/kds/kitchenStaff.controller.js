@@ -41,18 +41,19 @@ const getAll = async (req, res, next) => {
 
 const getById = async (req, res, next) => {
     try {
-        const validation = idSchema.safeParse(req.params);
-            if (!validation.success) {
-                return res.status(400).json({ errors: validation.error.format() });
-    }
+        // Aceptar UUID como ID de KitchenStaff (el modelo usa UUID)
+        const validation = uuidSchema.safeParse(req.params);
+        if (!validation.success) {
+            return res.status(400).json({ errors: validation.error.format() });
+        }
 
-    const staff = await getKitchenStaffById(validation.data.id);
+        const staff = await getKitchenStaffById(validation.data.id);
         if (!staff) {
             return res.status(404).json({ message: 'Personal no encontrado' });
-    }
-    res.json(staff);
+        }
+        res.json(staff);
     } catch (error) {
-    next(error);
+        next(error);
     }
 };
 
