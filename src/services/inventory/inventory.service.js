@@ -1,6 +1,27 @@
 import { includes } from 'zod';
 import { prisma } from '../../db/client.js';
 
+const deactivateProductsIfItemOutOfStock = async ({ itemId, currentStock }) => {
+  if (!itemId) return;
+
+  const shortageRecipes = await prisma.recipe.findMany({
+    where: {
+      inventoryItemId: itemId,
+      quantityRequired: { gt: Number(currentStock) }
+    },
+    select: { productId: true }
+  });
+
+  if (!shortageRecipes.length) return;
+
+  const productIds = [...new Set(shortageRecipes.map(r => r.productId))];
+
+  await prisma.kitchenProduct.updateMany({
+    where: { id: { in: productIds }, isActive: true },
+    data: { isActive: false }
+  });
+};
+
 export const findItems = async ({ type, stockStatus }) => {
   if (stockStatus === 'LOW') {
     if (type) {
@@ -145,6 +166,11 @@ export const registerOutbound = async ({ itemId, quantityChange, movementType, r
     });
 
     return { log, updated };
+  });
+
+  await deactivateProductsIfItemOutOfStock({
+    itemId,
+    currentStock: result.updated.currentStock
   });
 
   return { message: 'Outbound registered', currentStock: result.updated.currentStock };

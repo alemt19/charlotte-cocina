@@ -75,7 +75,6 @@ const mapKdsStatusToAtencionClienteStatus = (kdsStatus) => {
             return 'PENDING';
         case 'COOKING':
             return 'COOKING';
-        case 'READY':
         case 'SERVED':
             return 'DELIVERED';
         case 'REJECTED':
